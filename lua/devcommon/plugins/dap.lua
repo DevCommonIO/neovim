@@ -62,6 +62,14 @@ return {
 				args = { "-m", "debugpy.adapter" },
 			}
 
+			dap.adapters.chrome = {
+				type = "executable",
+				command = "node",
+				args = {
+					vim.fn.stdpath("data") .. "/mason/packages/chrome-debug-adapter/out/src/chromeDebug.js",
+				},
+			}
+
 			dap.configurations.python = {
 				{
 					type = "python",
@@ -106,6 +114,17 @@ return {
 					sourceMaps = true,
 					console = "integratedTerminal",
 					protocol = "inspector",
+				},
+				{
+					name = "Attach to Chrome",
+					type = "chrome",
+					request = "attach",
+					program = "${file}",
+					cwd = vim.fn.getcwd(),
+					sourceMaps = true,
+					protocol = "inspector",
+					port = 9222, -- Important!
+					webRoot = "${workspaceFolder}/src",
 				},
 			}
 
