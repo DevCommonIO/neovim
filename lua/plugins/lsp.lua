@@ -90,9 +90,9 @@ return {
 
 		-- Diagnostic icons
 		for type, icon in pairs({ Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }) do
-			vim.fn.sign_define("DiagnosticSign" .. type, { text = icon, texthl = "DiagnosticSign" .. type })
+			local hl = "DiagnosticSign" .. type
+			vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
 		end
-
 		-- Setup handler-based server configuration
 		require("mason-lspconfig").setup({
 			-- Default handler
