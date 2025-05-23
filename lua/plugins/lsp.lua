@@ -94,7 +94,7 @@ return {
 		end
 
 		-- Setup handler-based server configuration
-		require("mason-lspconfig").setup_handlers({
+		require("mason-lspconfig").setup({
 			-- Default handler
 			function(server_name)
 				lspconfig[server_name].setup({ capabilities = capabilities })
