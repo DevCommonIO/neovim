@@ -3,22 +3,20 @@ return {
 	event = { "BufReadPre", "BufNewFile" },
 	dependencies = {
 		"williamboman/mason.nvim",
-		"williamboman/mason-lspconfig.nvim",
+		{ "williamboman/mason-lspconfig.nvim", version = "*" },
 		"hrsh7th/cmp-nvim-lsp",
 		{ "antosha417/nvim-lsp-file-operations", config = true },
 		{ "folke/neodev.nvim", opts = {} },
 	},
 	config = function()
 		local lspconfig = require("lspconfig")
-		local mason_lspconfig = require("mason-lspconfig")
-		local cmp_nvim_lsp = require("cmp_nvim_lsp")
-		local capabilities = cmp_nvim_lsp.default_capabilities()
+		local capabilities = require("cmp_nvim_lsp").default_capabilities()
 		local util = require("lspconfig.util")
 		local keymap = vim.keymap
 
 		-- Setup Mason
 		require("mason").setup()
-		mason_lspconfig.setup({
+		require("mason-lspconfig").setup({
 			ensure_installed = {
 				"lua_ls",
 				"ts_ls",
@@ -31,7 +29,7 @@ return {
 			},
 		})
 
-		-- Python virtualenv logic
+		-- Python venv resolution
 		local function get_python_path()
 			if vim.env.VIRTUAL_ENV then
 				return vim.env.VIRTUAL_ENV .. "/bin/python"
@@ -45,7 +43,7 @@ return {
 			return vim.fn.exepath("python3") or vim.fn.exepath("python") or "python"
 		end
 
-		-- LSP diagnostics float config
+		-- Diagnostics float config
 		vim.diagnostic.config({
 			float = {
 				focusable = true,
@@ -65,7 +63,7 @@ return {
 			end,
 		})
 
-		-- LSP keymaps on attach
+		-- LSP on-attach keymaps
 		vim.api.nvim_create_autocmd("LspAttach", {
 			group = vim.api.nvim_create_augroup("UserLspConfig", {}),
 			callback = function(ev)
@@ -90,23 +88,19 @@ return {
 			end,
 		})
 
-		-- Diagnostic signs
+		-- Diagnostic icons
 		for type, icon in pairs({ Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }) do
 			vim.fn.sign_define("DiagnosticSign" .. type, { text = icon, texthl = "DiagnosticSign" .. type })
 		end
 
-		local mason_lspconfig = require("mason-lspconfig")
-
-		mason_lspconfig.setup({
-			ensure_installed = { "lua_ls", "tsserver", "pyright" },
-		})
-
-		mason_lspconfig.setup_handlers({
-			-- default
+		-- Setup handler-based server configuration
+		require("mason-lspconfig").setup_handlers({
+			-- Default handler
 			function(server_name)
-				require("lspconfig")[server_name].setup({ capabilities = capabilities })
+				lspconfig[server_name].setup({ capabilities = capabilities })
 			end,
 
+			-- TypeScript/JavaScript
 			["ts_ls"] = function()
 				lspconfig.tsserver.setup({
 					capabilities = capabilities,
@@ -118,6 +112,7 @@ return {
 				})
 			end,
 
+			-- Lua
 			["lua_ls"] = function()
 				lspconfig.lua_ls.setup({
 					capabilities = capabilities,
@@ -131,6 +126,7 @@ return {
 				})
 			end,
 
+			-- Python
 			["pyright"] = function()
 				lspconfig.pyright.setup({
 					capabilities = capabilities,
@@ -142,6 +138,7 @@ return {
 				})
 			end,
 
+			-- Biome
 			["biome"] = function()
 				lspconfig.biome.setup({
 					cmd = { vim.fn.stdpath("data") .. "/mason/bin/biome", "lsp-proxy" },
@@ -157,6 +154,7 @@ return {
 				})
 			end,
 
+			-- GraphQL
 			["graphql"] = function()
 				lspconfig.graphql.setup({
 					capabilities = capabilities,
@@ -164,6 +162,7 @@ return {
 				})
 			end,
 
+			-- Svelte
 			["svelte"] = function()
 				lspconfig.svelte.setup({
 					capabilities = capabilities,
@@ -179,6 +178,7 @@ return {
 				})
 			end,
 
+			-- Emmet
 			["emmet_ls"] = function()
 				lspconfig.emmet_ls.setup({
 					capabilities = capabilities,

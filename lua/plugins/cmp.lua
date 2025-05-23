@@ -4,56 +4,48 @@ return {
 	dependencies = {
 		"hrsh7th/cmp-buffer", -- source for text in buffer
 		"hrsh7th/cmp-path", -- source for file system paths
-		"David-Kunz/cmp-npm", -- Add this for npm package autocompletion
 		"hrsh7th/cmp-cmdline", -- Enables command-line completion
+		"David-Kunz/cmp-npm", -- Autocomplete for npm packages
+		"hrsh7th/cmp-nvim-lsp", -- LSP source
+		"hrsh7th/cmp-nvim-lsp-signature-help", -- function parameter hints
 		{
 			"L3MON4D3/LuaSnip",
-			-- follow latest release.
-			version = "v2.*", -- Replace <CurrentMajor> by the latest released major (first number of latest release)
-			-- install jsregexp (optional!).
+			version = "v2.*",
 			build = "make install_jsregexp",
 		},
-		"saadparwaiz1/cmp_luasnip", -- for autocompletion
-		"rafamadriz/friendly-snippets", -- useful snippets
-		"onsails/lspkind.nvim", -- vs-code like pictograms
+		"saadparwaiz1/cmp_luasnip", -- Snippet support
+		"rafamadriz/friendly-snippets", -- Prebuilt snippets
+		"onsails/lspkind.nvim", -- VSCode-like pictograms
 	},
 	config = function()
 		local cmp = require("cmp")
-
 		local luasnip = require("luasnip")
-
 		local lspkind = require("lspkind")
+
+		require("luasnip.loaders.from_vscode").lazy_load()
 
 		local has_words_before = function()
 			local line, col = unpack(vim.api.nvim_win_get_cursor(0))
 			return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
 		end
 
-		local feedkey = function(key, mode)
-			vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, true, true), mode, true)
-		end
-		-- loads vscode style snippets from installed plugins (e.g. friendly-snippets)
-		require("luasnip.loaders.from_vscode").lazy_load()
-
 		cmp.setup({
 			completion = {
 				completeopt = "menu,menuone,preview,noinsert",
-          autocomplete = { require("cmp.types").cmp.TriggerEvent.TextChanged }, -- ✅ ADD THIS
-
+				autocomplete = { require("cmp.types").cmp.TriggerEvent.TextChanged },
 			},
-			snippet = { -- configure how nvim-cmp interacts with snippet engine
+			snippet = {
 				expand = function(args)
 					luasnip.lsp_expand(args.body)
 				end,
 			},
-
 			mapping = cmp.mapping.preset.insert({
-				["<C-k>"] = cmp.mapping.select_prev_item(), -- previous suggestion
-				["<C-j>"] = cmp.mapping.select_next_item(), -- next suggestion
+				["<C-k>"] = cmp.mapping.select_prev_item(),
+				["<C-j>"] = cmp.mapping.select_next_item(),
 				["<C-b>"] = cmp.mapping.scroll_docs(-4),
 				["<C-f>"] = cmp.mapping.scroll_docs(4),
-				["<C-Space>"] = cmp.mapping.complete(), -- show completion suggestions
-				["<C-e>"] = cmp.mapping.abort(), -- close completion window
+				["<C-Space>"] = cmp.mapping.complete(),
+				["<C-e>"] = cmp.mapping.abort(),
 				["<CR>"] = cmp.mapping.confirm({ select = true }),
 				["<Tab>"] = function(fallback)
 					if luasnip.expand_or_jumpable() then
@@ -70,20 +62,17 @@ return {
 					end
 				end,
 			}),
-
 			window = {
 				documentation = cmp.config.window.bordered(),
 			},
-
 			sources = cmp.config.sources({
 				{ name = "nvim_lsp" },
-				{ name = "luasnip" }, -- snippets
+				{ name = "nvim_lsp_signature_help" },
+				{ name = "luasnip" },
 				{ name = "npm", keyword_length = 4 },
-				{ name = "buffer" }, -- text within current buffer
-				{ name = "path" }, -- file system paths
+				{ name = "buffer" },
+				{ name = "path" },
 			}),
-
-			-- configure lspkind for vs-code like pictograms in completion menu
 			formatting = {
 				fields = { "kind", "abbr", "menu" },
 				expandable_indicator = true,
