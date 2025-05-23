@@ -37,7 +37,7 @@ return {
 
 		cmp.setup({
 			completion = {
-				completeopt = "menu,menuone,preview,noselect",
+				completeopt = "menu,menuone,preview,noinsert",
 			},
 			snippet = { -- configure how nvim-cmp interacts with snippet engine
 				expand = function(args)
@@ -52,27 +52,41 @@ return {
 				["<C-f>"] = cmp.mapping.scroll_docs(4),
 				["<C-Space>"] = cmp.mapping.complete(), -- show completion suggestions
 				["<C-e>"] = cmp.mapping.abort(), -- close completion window
-				["<CR>"] = cmp.mapping.confirm({ select = false }),
-				["<Tab>"] = cmp.mapping(function(fallback)
-					if cmp.visible() then
-						cmp.confirm({ select = true })
-					elseif luasnip.expand_or_jumpable() then
+				["<CR>"] = cmp.mapping.confirm({ select = true }),
+				-- ["<Tab>"] = cmp.mapping(function(fallback)
+				-- 	if cmp.visible() then
+				-- 		cmp.confirm({ select = true })
+				-- 	elseif luasnip.expand_or_jumpable() then
+				-- 		luasnip.expand_or_jump()
+				-- 	elseif has_words_before() then
+				-- 		cmp.complete()
+				-- 	else
+				-- 		fallback()
+				-- 	end
+				-- end, { "i", "s" }),
+				-- ["<S-Tab>"] = cmp.mapping(function(fallback)
+				-- 	if cmp.visible() then
+				-- 		cmp.select_prev_item()
+				-- 	elseif luasnip.jumpable(-1) then
+				-- 		luasnip.jump(-1)
+				-- 	else
+				-- 		fallback()
+				-- 	end
+				-- end, { "i", "s" }),
+				["<Tab>"] = function(fallback)
+					if luasnip.expand_or_jumpable() then
 						luasnip.expand_or_jump()
-					elseif has_words_before() then
-						cmp.complete()
 					else
 						fallback()
 					end
-				end, { "i", "s" }),
-				["<S-Tab>"] = cmp.mapping(function(fallback)
-					if cmp.visible() then
-						cmp.select_prev_item()
-					elseif luasnip.jumpable(-1) then
+				end,
+				["<S-Tab>"] = function(fallback)
+					if luasnip.jumpable(-1) then
 						luasnip.jump(-1)
 					else
 						fallback()
 					end
-				end, { "i", "s" }),
+				end,
 			}),
 
 			window = {
