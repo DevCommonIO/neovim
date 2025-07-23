@@ -20,6 +20,10 @@ keymap.set("n", "<leader>nh", ":nohl<CR>", { desc = "Clear search highlights" })
 keymap.set("n", "<leader>+", "<C-a>", { desc = "Increment number" }) -- increment
 keymap.set("n", "<leader>-", "<C-x>", { desc = "Decrement number" }) -- decrement
 
+-- keymap.set("n", "<leader>cp", ":Copilot panel<CR>", { desc = "Open Copilot Panel" })
+keymap.set("n", "<leader>cp", "<cmd>Copilot panel<CR>", { desc = "Open Copilot panel" })
+keymap.set("n", "<leader>cr", "<cmd>Copilot panel refresh<CR>", { desc = "Refresh Copilot panel" })
+
 keymap.set("n", "<leader>pv", vim.cmd.Ex) -- exit current page
 -- window management
 keymap.set("n", "<leader>sv", "<C-w>v", { desc = "Split window vertically" }) -- split window vertically
@@ -70,6 +74,11 @@ keymap.set("t", "<M-Down>", "<C-\\><C-N><C-w>j", { noremap = true, silent = true
 keymap.set("t", "<M-Up>", "<C-\\><C-N><C-w>k", { noremap = true, silent = true })
 keymap.set("t", "<M-Right>", "<C-\\><C-N><C-w>l", { noremap = true, silent = true })
 
+keymap.set("n", "<leader>ct", function()
+	require("copilot.suggestion").toggle_auto_trigger()
+	print("Toggled Copilot auto-suggestion")
+end, { desc = "Toggle Copilot suggestions" })
+
 keymap.set("n", "<leader>cc", function()
 	local api = vim.api
 	local current_buf = api.nvim_get_current_buf()
@@ -90,4 +99,3 @@ keymap.set("n", "<leader>cc", function()
 		vim.cmd("quit")
 	end
 end, { desc = "Smart close current buffer + window" })
-

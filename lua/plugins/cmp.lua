@@ -46,7 +46,13 @@ return {
 				["<C-f>"] = cmp.mapping.scroll_docs(4),
 				["<C-Space>"] = cmp.mapping.complete(),
 				["<C-e>"] = cmp.mapping.abort(),
-				["<CR>"] = cmp.mapping.confirm({ select = true }),
+				["<C-l>"] = cmp.mapping.confirm({ select = true }),
+
+				["<CR>"] = function(fallback)
+					-- Do nothing to prevent <CR> from confirming (fallback to normal behavior)
+					fallback()
+				end,
+
 				["<Tab>"] = function(fallback)
 					if luasnip.expand_or_jumpable() then
 						luasnip.expand_or_jump()
@@ -66,6 +72,7 @@ return {
 				documentation = cmp.config.window.bordered(),
 			},
 			sources = cmp.config.sources({
+				{ name = "copilot" },
 				{ name = "nvim_lsp" },
 				{ name = "nvim_lsp_signature_help" },
 				{ name = "luasnip" },

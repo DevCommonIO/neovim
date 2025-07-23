@@ -22,6 +22,15 @@ return {
 					"dist/",
 					"__pycache__/",
 				},
+				vimgrep_arguments = {
+					"rg",
+					"--color=never",
+					"--no-heading",
+					"--with-filename",
+					"--line-number",
+					"--column",
+					"--smart-case", -- Make grep case-insensitive by default
+				},
 				layout_config = {
 					prompt_position = "top",
 					horizontal = { width = 0.9, preview_width = 0.6 },
@@ -47,7 +56,18 @@ return {
 
 		keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Fuzzy find files in cwd" })
 		keymap.set("n", "<leader>fr", "<cmd>Telescope oldfiles<cr>", { desc = "Fuzzy find recent files" })
-		keymap.set("n", "<leader>fs", "<cmd>Telescope live_grep<cr>", { desc = "Find string in cwd" })
+		keymap.set("n", "<leader>fs", "<cmd>Telescope live_grep<cr>", { desc = "Find string in project" })
+
+		keymap.set("v", "<leader>fs", function()
+			vim.cmd('normal! "vy') -- yank into v register
+			local text = vim.fn.getreg("v")
+			text = string.gsub(text, "\n", "") -- remove line breaks
+			require("telescope.builtin").live_grep({
+				default_text = text,
+				case_mode = "ignore_case", -- Use smart case for current buffer search
+			})
+		end, { desc = "Live grep visual selection" })
+
 		keymap.set("n", "<leader>fb", "<cmd>Telescope buffers<cr>", { desc = "Find buffers" })
 		keymap.set("n", "<leader>fd", builtin.lsp_document_symbols, { desc = "Document symbols" })
 		keymap.set("n", "<leader>fc", "<cmd>Telescope grep_string<cr>", { desc = "Find string under cursor in cwd" })
@@ -65,6 +85,7 @@ return {
 			local word = vim.fn.expand("<cword>")
 			require("telescope.builtin").current_buffer_fuzzy_find({
 				default_text = word,
+				case_mode = "ignore_case", -- Use smart case for current buffer search
 			})
 		end, { desc = "Fuzzy search word under cursor in buffer" })
 		keymap.set("v", "<leader>fw", function()
@@ -76,8 +97,8 @@ return {
 			text = string.gsub(text, "\n", "")
 			require("telescope.builtin").current_buffer_fuzzy_find({
 				default_text = text,
+				case_mode = "ignore_case", -- Use smart case for current buffer search
 			})
 		end, { desc = "Fuzzy search visual selection in buffer" })
 	end,
 }
-

@@ -45,6 +45,11 @@ return {
 
 		-- Diagnostics float config
 		vim.diagnostic.config({
+			virtual_text = {
+				prefix = "●", -- Could be "●", "▎", "■", or "" for no symbol
+				spacing = 2,
+				source = "if_many", -- "always", "if_many", "false"
+			},
 			float = {
 				focusable = true,
 				style = "minimal",
@@ -54,7 +59,10 @@ return {
 				width = 80,
 				wrap = true,
 			},
+			signs = true,
+			underline = true,
 			update_in_insert = false,
+			severity_sort = true,
 		})
 
 		vim.api.nvim_create_autocmd("CursorHold", {
