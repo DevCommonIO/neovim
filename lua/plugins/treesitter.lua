@@ -35,6 +35,8 @@ return {
 				"query",
 				"vimdoc",
 				"c",
+				"regex",
+				"ini",
 			},
 			incremental_selection = {
 				enable = true,
@@ -49,4 +51,3 @@ return {
 		})
 	end,
 }
-
