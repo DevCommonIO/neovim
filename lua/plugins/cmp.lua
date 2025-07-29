@@ -46,7 +46,15 @@ return {
 				["<C-f>"] = cmp.mapping.scroll_docs(4),
 				["<C-Space>"] = cmp.mapping.complete(),
 				["<C-e>"] = cmp.mapping.abort(),
-				["<CR>"] = cmp.mapping.confirm({ select = true }),
+				-- ["<CR>"] = cmp.mapping.confirm({ select = true }),
+
+				["<CR>"] = function(fallback)
+					if cmp.visible() then
+						cmp.abort()
+					end
+					fallback() -- just insert new line
+				end,
+				["<M-CR>"] = cmp.mapping.confirm({ select = true }),
 
 				["<Tab>"] = function(fallback)
 					if luasnip.expand_or_jumpable() then

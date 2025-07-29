@@ -11,6 +11,37 @@ return {
 		local telescope = require("telescope")
 		local actions = require("telescope.actions")
 		local builtin = require("telescope.builtin")
+		local action_state = require("telescope.actions.state")
+		local pickers = require("telescope.pickers")
+		local finders = require("telescope.finders")
+		local conf = require("telescope.config").values
+
+		local function copilot_chat_prompt()
+			pickers
+				.new({}, {
+					prompt_title = "Copilot Chat Prompt",
+					finder = finders.new_table({
+						results = {
+							"Explain this code",
+							"Suggest tests for this code",
+							"Review this code for improvements",
+							"Fix bugs in this code",
+							"Generate documentation",
+							"Translate to TypeScript",
+						},
+					}),
+					sorter = conf.generic_sorter({}),
+					attach_mappings = function(prompt_bufnr, map)
+						actions.select_default:replace(function()
+							actions.close(prompt_bufnr)
+							local selection = action_state.get_selected_entry()
+							vim.cmd("CopilotChat " .. selection[1])
+						end)
+						return true
+					end,
+				})
+				:find()
+		end
 
 		telescope.setup({
 			defaults = {
@@ -29,7 +60,7 @@ return {
 					"--with-filename",
 					"--line-number",
 					"--column",
-					"--smart-case", -- Make grep case-insensitive by default
+					"--smart-case",
 				},
 				layout_config = {
 					prompt_position = "top",
@@ -41,8 +72,8 @@ return {
 				sorting_strategy = "ascending",
 				mappings = {
 					i = {
-						["<C-k>"] = actions.move_selection_previous, -- move to prev result
-						["<C-j>"] = actions.move_selection_next, -- move to next result
+						["<C-k>"] = actions.move_selection_previous,
+						["<C-j>"] = actions.move_selection_next,
 						["<C-q>"] = actions.send_selected_to_qflist + actions.open_qflist,
 					},
 				},
@@ -52,19 +83,18 @@ return {
 		telescope.load_extension("fzf")
 		telescope.load_extension("todo-comments")
 
-		local keymap = vim.keymap -- for conciseness
+		local keymap = vim.keymap
 
 		keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Fuzzy find files in cwd" })
 		keymap.set("n", "<leader>fr", "<cmd>Telescope oldfiles<cr>", { desc = "Fuzzy find recent files" })
 		keymap.set("n", "<leader>fs", "<cmd>Telescope live_grep<cr>", { desc = "Find string in project" })
-
 		keymap.set("v", "<leader>fs", function()
-			vim.cmd('normal! "vy') -- yank into v register
+			vim.cmd('normal! "vy')
 			local text = vim.fn.getreg("v")
-			text = string.gsub(text, "\n", "") -- remove line breaks
+			text = string.gsub(text, "\n", "")
 			require("telescope.builtin").live_grep({
 				default_text = text,
-				case_mode = "ignore_case", -- Use smart case for current buffer search
+				case_mode = "ignore_case",
 			})
 		end, { desc = "Live grep visual selection" })
 
@@ -79,26 +109,24 @@ return {
 			{ desc = "Search in current buffer" }
 		)
 		keymap.set("n", "<leader>tr", "<cmd>Telescope resume<cr>", { desc = "Resume last search" })
-
 		keymap.set("n", "<leader>fu", builtin.lsp_references, { desc = "Find references of symbol under cursor" })
 		keymap.set("n", "<leader>fw", function()
 			local word = vim.fn.expand("<cword>")
 			require("telescope.builtin").current_buffer_fuzzy_find({
 				default_text = word,
-				case_mode = "ignore_case", -- Use smart case for current buffer search
+				case_mode = "ignore_case",
 			})
 		end, { desc = "Fuzzy search word under cursor in buffer" })
 		keymap.set("v", "<leader>fw", function()
-			-- Yank selected text into "v" register
 			vim.cmd('normal! "vy')
 			local text = vim.fn.getreg("v")
-
-			-- Remove line breaks (if multi-line selection)
 			text = string.gsub(text, "\n", "")
 			require("telescope.builtin").current_buffer_fuzzy_find({
 				default_text = text,
-				case_mode = "ignore_case", -- Use smart case for current buffer search
+				case_mode = "ignore_case",
 			})
 		end, { desc = "Fuzzy search visual selection in buffer" })
+
+		keymap.set("n", "<leader>cC", copilot_chat_prompt, { desc = "Copilot Chat Prompt Picker" })
 	end,
 }
