@@ -79,7 +79,12 @@ keymap.set("n", "<leader>ct", function()
 	print("Toggled Copilot auto-suggestion")
 end, { desc = "Toggle Copilot suggestions" })
 
-keymap.set("n", "<leader>cc", function()
+vim.keymap.set("n", "<leader>cx", function()
+	local filepath = vim.fn.expand("%:p")
+	vim.fn.setreg("+", filepath) -- Copy to system clipboard
+	print("Copied: " .. filepath)
+end, { desc = "Copy current file path" })
+keymap.set("n", "<leader>co", function()
 	local api = vim.api
 	local current_buf = api.nvim_get_current_buf()
 

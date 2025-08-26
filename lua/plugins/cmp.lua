@@ -2,20 +2,20 @@ return {
 	"hrsh7th/nvim-cmp",
 	event = "InsertEnter",
 	dependencies = {
-		"hrsh7th/cmp-buffer", -- source for text in buffer
-		"hrsh7th/cmp-path", -- source for file system paths
-		"hrsh7th/cmp-cmdline", -- Enables command-line completion
-		"David-Kunz/cmp-npm", -- Autocomplete for npm packages
-		"hrsh7th/cmp-nvim-lsp", -- LSP source
-		"hrsh7th/cmp-nvim-lsp-signature-help", -- function parameter hints
+		"hrsh7th/cmp-buffer",
+		"hrsh7th/cmp-path",
+		"hrsh7th/cmp-cmdline",
+		"David-Kunz/cmp-npm",
+		"hrsh7th/cmp-nvim-lsp",
+		"hrsh7th/cmp-nvim-lsp-signature-help",
 		{
 			"L3MON4D3/LuaSnip",
 			version = "v2.*",
 			build = "make install_jsregexp",
 		},
-		"saadparwaiz1/cmp_luasnip", -- Snippet support
-		"rafamadriz/friendly-snippets", -- Prebuilt snippets
-		"onsails/lspkind.nvim", -- VSCode-like pictograms
+		"saadparwaiz1/cmp_luasnip",
+		"rafamadriz/friendly-snippets",
+		"onsails/lspkind.nvim",
 	},
 	config = function()
 		local cmp = require("cmp")
@@ -23,11 +23,6 @@ return {
 		local lspkind = require("lspkind")
 
 		require("luasnip.loaders.from_vscode").lazy_load()
-
-		local has_words_before = function()
-			local line, col = unpack(vim.api.nvim_win_get_cursor(0))
-			return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
-		end
 
 		cmp.setup({
 			completion = {
@@ -46,15 +41,9 @@ return {
 				["<C-f>"] = cmp.mapping.scroll_docs(4),
 				["<C-Space>"] = cmp.mapping.complete(),
 				["<C-e>"] = cmp.mapping.abort(),
-				-- ["<CR>"] = cmp.mapping.confirm({ select = true }),
 
-				["<CR>"] = function(fallback)
-					if cmp.visible() then
-						cmp.abort()
-					end
-					fallback() -- just insert new line
-				end,
-				["<M-CR>"] = cmp.mapping.confirm({ select = true }),
+				-- Confirm on Enter with auto-select
+				["<CR>"] = cmp.mapping.confirm({ select = true }),
 
 				["<Tab>"] = function(fallback)
 					if luasnip.expand_or_jumpable() then
@@ -74,15 +63,6 @@ return {
 			window = {
 				documentation = cmp.config.window.bordered(),
 			},
-			sources = cmp.config.sources({
-				{ name = "copilot" },
-				{ name = "nvim_lsp" },
-				{ name = "nvim_lsp_signature_help" },
-				{ name = "luasnip" },
-				{ name = "npm", keyword_length = 4 },
-				{ name = "buffer" },
-				{ name = "path" },
-			}),
 			formatting = {
 				fields = { "kind", "abbr", "menu" },
 				expandable_indicator = true,
@@ -91,6 +71,32 @@ return {
 					ellipsis_char = "...",
 				}),
 			},
+			sources = cmp.config.sources({
+				{ name = "nvim_lsp" },
+				{ name = "nvim_lsp_signature_help" },
+				{ name = "luasnip" },
+				{ name = "npm", keyword_length = 4 },
+				{ name = "buffer" },
+				{ name = "path" },
+				{ name = "copilot", group_index = 2 }, -- Lower priority, if needed
+			}),
+		})
+
+		-- Optional: cmdline support
+		cmp.setup.cmdline({ "/", "?" }, {
+			mapping = cmp.mapping.preset.cmdline(),
+			sources = {
+				{ name = "buffer" },
+			},
+		})
+
+		cmp.setup.cmdline(":", {
+			mapping = cmp.mapping.preset.cmdline(),
+			sources = cmp.config.sources({
+				{ name = "path" },
+			}, {
+				{ name = "cmdline" },
+			}),
 		})
 	end,
 }

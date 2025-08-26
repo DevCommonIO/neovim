@@ -9,3 +9,17 @@ vim.opt.clipboard = "unnamedplus"
 vim.opt.cursorline = true
 vim.opt.wrap = false
 
+-- Optional: Use InsertLeave and InsertEnter to toggle
+vim.api.nvim_create_autocmd({ "InsertEnter" }, {
+	pattern = "*",
+	callback = function()
+		vim.opt.relativenumber = false
+	end,
+})
+
+vim.api.nvim_create_autocmd({ "InsertLeave" }, {
+	pattern = "*",
+	callback = function()
+		vim.opt.relativenumber = true
+	end,
+})

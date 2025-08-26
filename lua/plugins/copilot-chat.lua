@@ -16,13 +16,14 @@ return {
 		"CopilotChatVisual",
 	},
 	keys = {
-		-- Normal mode: ask about buffer context
+		-- Normal mode: ask about current buffer
 		{
 			"<leader>cc",
 			function()
-				vim.ui.input({ prompt = "Ask Copilot about current buffer: " }, function(input)
+				vim.ui.input({ prompt = "Ask Copilot (buffer): " }, function(input)
 					if input and input ~= "" then
 						require("CopilotChat").ask(input, {
+							context = "buffer",
 							selection = require("CopilotChat.select").buffer,
 						})
 					end
@@ -31,26 +32,15 @@ return {
 			desc = "Ask Copilot (Buffer Context)",
 		},
 
-		{ "<leader>ce", "<cmd>CopilotChatExplain<cr>", desc = "Explain code" },
-		{ "<leader>cr", "<cmd>CopilotChatReview<cr>", desc = "Review code" },
-		{ "<leader>ct", "<cmd>CopilotChatTests<cr>", desc = "Suggest tests" },
-		{ "<leader>cf", "<cmd>CopilotChatFix<cr>", desc = "Suggest fix" },
-		{
-			"<leader>cd",
-			function()
-				require("CopilotChat").clear()
-			end,
-			desc = "Clear Copilot Chat context",
-		},
-
-		-- Visual mode: ask about selection
+		-- Visual mode: free-form question
 		{
 			mode = "v",
 			"<leader>cq",
 			function()
-				vim.ui.input({ prompt = "Ask Copilot about selected code: " }, function(input)
+				vim.ui.input({ prompt = "Ask Copilot (visual): " }, function(input)
 					if input and input ~= "" then
 						require("CopilotChat").ask(input, {
+							context = "buffer",
 							selection = require("CopilotChat.select").visual,
 						})
 					end
@@ -58,20 +48,37 @@ return {
 			end,
 			desc = "Ask Copilot (Visual Selection)",
 		},
+
+		-- Visual mode: explain selected code
 		{
 			mode = "v",
-			"<leader>cc",
+			"<leader>ce",
 			function()
 				require("CopilotChat").ask("Explain this code", {
+					context = "buffer",
 					selection = require("CopilotChat.select").visual,
 				})
 			end,
-			desc = "Explain with Copilot (Visual)",
+			desc = "Explain Code (Visual)",
+		},
+
+		-- Visual mode: suggest tests
+		{
+			mode = "v",
+			"<leader>ct",
+			function()
+				require("CopilotChat").ask("Suggest tests for this code", {
+					context = "buffer",
+					selection = require("CopilotChat.select").visual,
+				})
+			end,
+			desc = "Suggest Tests (Visual)",
 		},
 	},
 	opts = {
 		show_help = false,
-		context = "buffer",
+		context = "buffer", -- default, but all calls override it explicitly
+		opt = "gpt5",
 		prompts = {
 			Explain = "Explain how it works.",
 			Review = "Review this code for improvements.",

@@ -3,20 +3,22 @@ return {
 	event = { "BufReadPre", "BufNewFile" },
 	dependencies = {
 		"williamboman/mason.nvim",
-		{ "williamboman/mason-lspconfig.nvim", version = "*" },
+		"williamboman/mason-lspconfig.nvim",
 		"hrsh7th/cmp-nvim-lsp",
 		{ "antosha417/nvim-lsp-file-operations", config = true },
 		{ "folke/neodev.nvim", opts = {} },
 	},
 	config = function()
 		local lspconfig = require("lspconfig")
-		local capabilities = require("cmp_nvim_lsp").default_capabilities()
+		local mason_lspconfig = require("mason-lspconfig")
+		local cmp_nvim_lsp = require("cmp_nvim_lsp")
+		local capabilities = cmp_nvim_lsp.default_capabilities()
 		local util = require("lspconfig.util")
 		local keymap = vim.keymap
 
 		-- Setup Mason
 		require("mason").setup()
-		require("mason-lspconfig").setup({
+		mason_lspconfig.setup({
 			ensure_installed = {
 				"lua_ls",
 				"ts_ls",
@@ -29,7 +31,7 @@ return {
 			},
 		})
 
-		-- Python venv resolution
+		-- Python virtualenv logic
 		local function get_python_path()
 			if vim.env.VIRTUAL_ENV then
 				return vim.env.VIRTUAL_ENV .. "/bin/python"
@@ -43,13 +45,8 @@ return {
 			return vim.fn.exepath("python3") or vim.fn.exepath("python") or "python"
 		end
 
-		-- Diagnostics float config
+		-- LSP diagnostics float config
 		vim.diagnostic.config({
-			virtual_text = {
-				prefix = "●", -- Could be "●", "▎", "■", or "" for no symbol
-				spacing = 2,
-				source = "if_many", -- "always", "if_many", "false"
-			},
 			float = {
 				focusable = true,
 				style = "minimal",
@@ -59,10 +56,7 @@ return {
 				width = 80,
 				wrap = true,
 			},
-			signs = true,
-			underline = true,
 			update_in_insert = false,
-			severity_sort = true,
 		})
 
 		vim.api.nvim_create_autocmd("CursorHold", {
@@ -71,7 +65,7 @@ return {
 			end,
 		})
 
-		-- LSP on-attach keymaps
+		-- LSP keymaps on attach
 		vim.api.nvim_create_autocmd("LspAttach", {
 			group = vim.api.nvim_create_augroup("UserLspConfig", {}),
 			callback = function(ev)
@@ -96,19 +90,21 @@ return {
 			end,
 		})
 
-		-- Diagnostic icons
+
+
+		-- Diagnostic signs
 		for type, icon in pairs({ Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }) do
-			local hl = "DiagnosticSign" .. type
-			vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
+			vim.fn.sign_define("DiagnosticSign" .. type, { text = icon, texthl = "DiagnosticSign" .. type })
 		end
-		-- Setup handler-based server configuration
-		require("mason-lspconfig").setup({
-			-- Default handler
+
+    ic signs
+~                             │┃  19 ▎ ▎ for type, i
+		mason_lspconfig.setup_handlers({
+			-- default
 			function(server_name)
-				lspconfig[server_name].setup({ capabilities = capabilities })
+				require("lspconfig")[server_name].setup({ capabilities = capabilities })
 			end,
 
-			-- TypeScript/JavaScript
 			["ts_ls"] = function()
 				lspconfig.tsserver.setup({
 					capabilities = capabilities,
@@ -120,7 +116,6 @@ return {
 				})
 			end,
 
-			-- Lua
 			["lua_ls"] = function()
 				lspconfig.lua_ls.setup({
 					capabilities = capabilities,
@@ -134,7 +129,6 @@ return {
 				})
 			end,
 
-			-- Python
 			["pyright"] = function()
 				lspconfig.pyright.setup({
 					capabilities = capabilities,
@@ -146,7 +140,6 @@ return {
 				})
 			end,
 
-			-- Biome
 			["biome"] = function()
 				lspconfig.biome.setup({
 					cmd = { vim.fn.stdpath("data") .. "/mason/bin/biome", "lsp-proxy" },
@@ -162,7 +155,6 @@ return {
 				})
 			end,
 
-			-- GraphQL
 			["graphql"] = function()
 				lspconfig.graphql.setup({
 					capabilities = capabilities,
@@ -170,7 +162,6 @@ return {
 				})
 			end,
 
-			-- Svelte
 			["svelte"] = function()
 				lspconfig.svelte.setup({
 					capabilities = capabilities,
@@ -186,7 +177,6 @@ return {
 				})
 			end,
 
-			-- Emmet
 			["emmet_ls"] = function()
 				lspconfig.emmet_ls.setup({
 					capabilities = capabilities,

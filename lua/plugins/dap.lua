@@ -75,6 +75,18 @@ return {
 			},
 			{
 				type = "node2",
+				name = "Run current test with npm test (Nightwatch)",
+				request = "launch",
+				runtimeExecutable = "npm",
+				runtimeArgs = { "run", "test", "--" },
+				args = { "${file}" },
+				cwd = "${workspaceFolder}",
+				sourceMaps = true,
+				protocol = "inspector",
+				console = "integratedTerminal",
+			},
+			{
+				type = "node2",
 				request = "attach",
 				name = "Attach to process",
 				processId = require("dap.utils").pick_process,
