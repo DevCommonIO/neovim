@@ -3,14 +3,16 @@ return {
 	event = { "BufReadPre", "BufNewFile" },
 	dependencies = {
 		"williamboman/mason.nvim",
-		"williamboman/mason-lspconfig.nvim",
+		{
+			"williamboman/mason-lspconfig.nvim",
+			version = ">=2.0.0",
+		},
 		"hrsh7th/cmp-nvim-lsp",
 		{ "antosha417/nvim-lsp-file-operations", config = true },
 		{ "folke/neodev.nvim", opts = {} },
 	},
 	config = function()
 		local lspconfig = require("lspconfig")
-		local mason_lspconfig = require("mason-lspconfig")
 		local cmp_nvim_lsp = require("cmp_nvim_lsp")
 		local capabilities = cmp_nvim_lsp.default_capabilities()
 		local util = require("lspconfig.util")
@@ -18,10 +20,10 @@ return {
 
 		-- Setup Mason
 		require("mason").setup()
-		mason_lspconfig.setup({
+		require("mason-lspconfig").setup({
 			ensure_installed = {
 				"lua_ls",
-				"ts_ls",
+				"tsserver",
 				"pyright",
 				"jsonls",
 				"emmet_ls",
@@ -29,6 +31,7 @@ return {
 				"biome",
 				"svelte",
 			},
+			automatic_installation = true,
 		})
 
 		-- Python virtualenv logic
@@ -90,108 +93,85 @@ return {
 			end,
 		})
 
-
-
 		-- Diagnostic signs
 		for type, icon in pairs({ Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }) do
 			vim.fn.sign_define("DiagnosticSign" .. type, { text = icon, texthl = "DiagnosticSign" .. type })
 		end
 
-    ic signs
-~                             │┃  19 ▎ ▎ for type, i
-		mason_lspconfig.setup_handlers({
-			-- default
-			function(server_name)
-				require("lspconfig")[server_name].setup({ capabilities = capabilities })
-			end,
+		-- Replace setup_handlers with per-server vim.lsp.config
+		vim.lsp.config("tsserver", {
+			capabilities = capabilities,
+			root_dir = util.root_pattern("package.json", "tsconfig.json", ".git"),
+			settings = {
+				typescript = { suggest = { completeFunctionCalls = true } },
+				javascript = { suggest = { completeFunctionCalls = true } },
+			},
+		})
 
-			["ts_ls"] = function()
-				lspconfig.tsserver.setup({
-					capabilities = capabilities,
-					root_dir = util.root_pattern("package.json", "tsconfig.json", ".git"),
-					settings = {
-						typescript = { suggest = { completeFunctionCalls = true } },
-						javascript = { suggest = { completeFunctionCalls = true } },
-					},
-				})
-			end,
+		vim.lsp.config("lua_ls", {
+			capabilities = capabilities,
+			settings = {
+				Lua = {
+					runtime = { version = "LuaJIT" },
+					diagnostics = { globals = { "vim" } },
+					workspace = { checkThirdParty = false },
+					completion = { callSnippet = "Replace" },
+				},
+			},
+		})
 
-			["lua_ls"] = function()
-				lspconfig.lua_ls.setup({
-					capabilities = capabilities,
-					settings = {
-						Lua = {
-							diagnostics = { globals = { "vim" } },
-							workspace = { checkThirdParty = false },
-							completion = { callSnippet = "Replace" },
-						},
-					},
-				})
+		vim.lsp.config("pyright", {
+			capabilities = capabilities,
+			before_init = function(_, config)
+				config.settings = config.settings or {}
+				config.settings.python = config.settings.python or {}
+				config.settings.python.pythonPath = get_python_path()
 			end,
+		})
 
-			["pyright"] = function()
-				lspconfig.pyright.setup({
-					capabilities = capabilities,
-					before_init = function(_, config)
-						config.settings = config.settings or {}
-						config.settings.python = config.settings.python or {}
-						config.settings.python.pythonPath = get_python_path()
+		vim.lsp.config("biome", {
+			cmd = { vim.fn.stdpath("data") .. "/mason/bin/biome", "lsp-proxy" },
+			root_dir = util.root_pattern("biome.json", "package.json", ".git"),
+			filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact", "json" },
+			settings = {
+				biome = {
+					files = { exclude = { "node_modules", "dist" } },
+					formatter = { enabled = true },
+					lint = { enabled = true, rules = { recommended = true } },
+				},
+			},
+		})
+
+		vim.lsp.config("graphql", {
+			capabilities = capabilities,
+			filetypes = { "graphql", "gql", "svelte", "typescriptreact", "javascriptreact" },
+		})
+
+		vim.lsp.config("svelte", {
+			capabilities = capabilities,
+			root_dir = util.root_pattern("package.json", ".git"),
+			on_attach = function(client)
+				vim.api.nvim_create_autocmd("BufWritePost", {
+					pattern = { "*.js", "*.ts" },
+					callback = function(ctx)
+						client.notify("$/onDidChangeTsOrJsFile", { uri = ctx.match })
 					end,
 				})
 			end,
+		})
 
-			["biome"] = function()
-				lspconfig.biome.setup({
-					cmd = { vim.fn.stdpath("data") .. "/mason/bin/biome", "lsp-proxy" },
-					root_dir = util.root_pattern("biome.json", "package.json", ".git"),
-					filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact", "json" },
-					settings = {
-						biome = {
-							files = { exclude = { "node_modules", "dist" } },
-							formatter = { enabled = true },
-							lint = { enabled = true, rules = { recommended = true } },
-						},
-					},
-				})
-			end,
-
-			["graphql"] = function()
-				lspconfig.graphql.setup({
-					capabilities = capabilities,
-					filetypes = { "graphql", "gql", "svelte", "typescriptreact", "javascriptreact" },
-				})
-			end,
-
-			["svelte"] = function()
-				lspconfig.svelte.setup({
-					capabilities = capabilities,
-					root_dir = util.root_pattern("package.json", ".git"),
-					on_attach = function(client)
-						vim.api.nvim_create_autocmd("BufWritePost", {
-							pattern = { "*.js", "*.ts" },
-							callback = function(ctx)
-								client.notify("$/onDidChangeTsOrJsFile", { uri = ctx.match })
-							end,
-						})
-					end,
-				})
-			end,
-
-			["emmet_ls"] = function()
-				lspconfig.emmet_ls.setup({
-					capabilities = capabilities,
-					filetypes = {
-						"html",
-						"typescriptreact",
-						"javascriptreact",
-						"css",
-						"sass",
-						"scss",
-						"less",
-						"svelte",
-					},
-				})
-			end,
+		vim.lsp.config("emmet_ls", {
+			capabilities = capabilities,
+			filetypes = {
+				"html",
+				"typescriptreact",
+				"javascriptreact",
+				"css",
+				"sass",
+				"scss",
+				"less",
+				"svelte",
+			},
 		})
 	end,
 }
