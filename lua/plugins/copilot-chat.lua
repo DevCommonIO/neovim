@@ -30,6 +30,19 @@ return {
 			desc = "CopilotChat: Ask about current buffer",
 			mode = "n",
 		},
+		{
+			"<leader>cC",
+			function()
+				local q = vim.fn.input("Copilot (#buffer:visible): ")
+				if q ~= "" then
+					require("CopilotChat").ask("#buffers:visible " .. q)
+					-- or, if you prefer the selection API:
+					-- require("CopilotChat").ask(q, { selection = require("CopilotChat.select").buffer })
+				end
+			end,
+			desc = "CopilotChat: Ask about current buffer",
+			mode = "n",
+		},
 
 		{ "<leader>ce", "<cmd>CopilotChatExplain<cr>", desc = "Explain code" },
 		{ "<leader>cr", "<cmd>CopilotChatReview<cr>", desc = "Review code" },
@@ -74,10 +87,10 @@ return {
 		-- `context = "buffer"` is fine, but becomes redundant if you pass `#buffer`
 		context = "buffer",
 		prompts = {
-			Explain = "Explain how it works.",
-			Review = "Review this code for improvements.",
-			Tests = "Suggest tests for this code.",
-			Fix = "Fix the issue in this code.",
+			Explain = "#buffer Explain how it works.",
+			Review = "#buffer Review this code for improvements.",
+			Tests = "#buffer Suggest tests for this code.",
+			Fix = "#buffer Fix the issue in this code.",
 		},
 		window = {
 			layout = "vertical",
