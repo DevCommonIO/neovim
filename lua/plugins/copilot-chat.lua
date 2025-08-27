@@ -40,7 +40,22 @@ return {
 					-- require("CopilotChat").ask(q, { selection = require("CopilotChat.select").buffer })
 				end
 			end,
-			desc = "CopilotChat: Ask about current buffer",
+			desc = "CopilotChat: Ask about opened buffer",
+			mode = "n",
+		},
+		{
+			"<leader>cg",
+			function()
+				local handle = io.popen("git diff")
+				local diff = handle:read("*a")
+				handle:close()
+				if diff ~= "" then
+					require("CopilotChat").ask("#diff " .. diff)
+				else
+					vim.notify("No git diff found.", vim.log.levels.INFO)
+				end
+			end,
+			desc = "CopilotChat: Ask about git diff",
 			mode = "n",
 		},
 
@@ -51,9 +66,9 @@ return {
 		{
 			"<leader>cd",
 			function()
-				require("CopilotChat").clear()
+				require("CopilotChat").reset()
 			end,
-			desc = "Clear Copilot Chat context",
+			desc = "Reset Copilot Chat context",
 			mode = "n",
 		},
 
@@ -84,7 +99,6 @@ return {
 	},
 	opts = {
 		show_help = false,
-		-- `context = "buffer"` is fine, but becomes redundant if you pass `#buffer`
 		context = "buffer",
 		prompts = {
 			Explain = "#buffer Explain how it works.",
@@ -94,7 +108,9 @@ return {
 		},
 		window = {
 			layout = "vertical",
-			width = 80,
+			width = 100,
+			title = " Copilot Chat ",
+			border = "rounded",
 		},
 	},
 	config = function(_, opts)

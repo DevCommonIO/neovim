@@ -10,6 +10,23 @@ return {
 		"hrsh7th/cmp-nvim-lsp",
 		{ "antosha417/nvim-lsp-file-operations", config = true },
 		{ "folke/neodev.nvim", opts = {} },
+		{ -- ✅ Added TokyoNight colorscheme
+			"folke/tokyonight.nvim",
+			lazy = false,
+			priority = 1000,
+			config = function()
+				require("tokyonight").setup({
+					style = "moon",
+					transparent = false,
+					styles = {
+						comments = { italic = true },
+						keywords = { italic = false },
+						functions = { bold = true },
+					},
+				})
+				vim.cmd.colorscheme("tokyonight")
+			end,
+		},
 	},
 	config = function()
 		local lspconfig = require("lspconfig")
@@ -17,6 +34,20 @@ return {
 		local capabilities = cmp_nvim_lsp.default_capabilities()
 		local util = require("lspconfig.util")
 		local keymap = vim.keymap
+
+		-- ✅ Add semantic token capabilities
+		capabilities.textDocument.semanticTokens = {
+			dynamicRegistration = false,
+			requests = {
+				range = true,
+				full = true,
+			},
+			tokenTypes = {},
+			tokenModifiers = {},
+			formats = { "relative" },
+			multilineTokenSupport = false,
+			overlappingTokenSupport = false,
+		}
 
 		-- Setup Mason
 		require("mason").setup()
@@ -33,6 +64,21 @@ return {
 			},
 			automatic_installation = true,
 		})
+
+		-- 🧠 Enable semantic highlighting per buffer
+		local function enable_semantic_tokens(client, bufnr)
+			if client.server_capabilities.semanticTokensProvider then
+				local augroup = vim.api.nvim_create_augroup("SemanticTokens", {})
+				vim.api.nvim_create_autocmd("TextChanged", {
+					group = augroup,
+					buffer = bufnr,
+					callback = function()
+						vim.lsp.semantic_tokens.refresh()
+					end,
+				})
+				vim.lsp.semantic_tokens.start(bufnr, client.id)
+			end
+		end
 
 		-- Python virtualenv logic
 		local function get_python_path()
@@ -72,6 +118,9 @@ return {
 		vim.api.nvim_create_autocmd("LspAttach", {
 			group = vim.api.nvim_create_augroup("UserLspConfig", {}),
 			callback = function(ev)
+				local client = vim.lsp.get_client_by_id(ev.data.client_id)
+				enable_semantic_tokens(client, ev.buf)
+
 				local opts = { buffer = ev.buf, silent = true }
 				keymap.set("n", "gR", "<cmd>Telescope lsp_references<CR>", opts)
 				keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
@@ -98,8 +147,8 @@ return {
 			vim.fn.sign_define("DiagnosticSign" .. type, { text = icon, texthl = "DiagnosticSign" .. type })
 		end
 
-		-- Replace setup_handlers with per-server vim.lsp.config
-		vim.lsp.config("tsserver", {
+		-- Server configs below...
+		lspconfig.tsserver.setup({
 			capabilities = capabilities,
 			root_dir = util.root_pattern("package.json", "tsconfig.json", ".git"),
 			settings = {
@@ -108,7 +157,7 @@ return {
 			},
 		})
 
-		vim.lsp.config("lua_ls", {
+		lspconfig.lua_ls.setup({
 			capabilities = capabilities,
 			settings = {
 				Lua = {
@@ -120,7 +169,7 @@ return {
 			},
 		})
 
-		vim.lsp.config("pyright", {
+		lspconfig.pyright.setup({
 			capabilities = capabilities,
 			before_init = function(_, config)
 				config.settings = config.settings or {}
@@ -129,7 +178,7 @@ return {
 			end,
 		})
 
-		vim.lsp.config("biome", {
+		lspconfig.biome.setup({
 			cmd = { vim.fn.stdpath("data") .. "/mason/bin/biome", "lsp-proxy" },
 			root_dir = util.root_pattern("biome.json", "package.json", ".git"),
 			filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact", "json" },
@@ -142,12 +191,12 @@ return {
 			},
 		})
 
-		vim.lsp.config("graphql", {
+		lspconfig.graphql.setup({
 			capabilities = capabilities,
 			filetypes = { "graphql", "gql", "svelte", "typescriptreact", "javascriptreact" },
 		})
 
-		vim.lsp.config("svelte", {
+		lspconfig.svelte.setup({
 			capabilities = capabilities,
 			root_dir = util.root_pattern("package.json", ".git"),
 			on_attach = function(client)
@@ -160,7 +209,7 @@ return {
 			end,
 		})
 
-		vim.lsp.config("emmet_ls", {
+		lspconfig.emmet_ls.setup({
 			capabilities = capabilities,
 			filetypes = {
 				"html",
