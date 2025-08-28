@@ -1,42 +1,27 @@
 return {
 	{
-		"andymass/vim-matchup",
-		event = "VeryLazy",
-		init = function()
-			vim.g.matchup_matchparen_offscreen = {
-				method = "popup",
-			}
-			vim.g.matchup_matchparen_deferred = 1
-			vim.g.matchup_matchparen_hi_surround_always = 1
-			vim.g.matchup_matchparen_enabled = 1
-		end,
-	},
-
-	{
-		"HiPhish/rainbow-delimiters.nvim",
+		"HiPhish/nvim-ts-rainbow2",
 		event = "VeryLazy",
 		config = function()
-			local rainbow_delimiters = require("rainbow-delimiters")
-
-			vim.g.rainbow_delimiters = {
-				strategy = {
-					[""] = rainbow_delimiters.strategy["global"],
-					vim = rainbow_delimiters.strategy["local"],
+			require("nvim-treesitter.configs").setup({
+				rainbow = {
+					enable = true,
+					-- list of languages you want to enable rainbow for
+					query = {
+						[""] = "rainbow-parens", -- default
+						tsx = "rainbow-parens",
+						javascript = "rainbow-parens",
+						typescript = "rainbow-parens",
+						html = "rainbow-parens",
+						lua = "rainbow-blocks",
+					},
+					strategy = {
+						[""] = require("ts-rainbow.strategy.global"),
+						tsx = require("ts-rainbow.strategy.local"),
+					},
+					-- highlight groups are handled by your colorscheme
 				},
-				query = {
-					[""] = "rainbow-delimiters",
-					lua = "rainbow-blocks",
-				},
-				highlight = {
-					"RainbowDelimiterRed",
-					"RainbowDelimiterYellow",
-					"RainbowDelimiterBlue",
-					"RainbowDelimiterOrange",
-					"RainbowDelimiterGreen",
-					"RainbowDelimiterViolet",
-					"RainbowDelimiterCyan",
-				},
-			}
+			})
 		end,
 	},
 }

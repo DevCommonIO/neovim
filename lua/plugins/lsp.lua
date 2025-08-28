@@ -54,7 +54,8 @@ return {
 		require("mason-lspconfig").setup({
 			ensure_installed = {
 				"lua_ls",
-				"tsserver",
+				-- "tsserver",
+				"ts_ls",
 				"pyright",
 				"jsonls",
 				"emmet_ls",
@@ -68,18 +69,9 @@ return {
 		-- 🧠 Enable semantic highlighting per buffer
 		local function enable_semantic_tokens(client, bufnr)
 			if client.server_capabilities.semanticTokensProvider then
-				local augroup = vim.api.nvim_create_augroup("SemanticTokens", {})
-				vim.api.nvim_create_autocmd("TextChanged", {
-					group = augroup,
-					buffer = bufnr,
-					callback = function()
-						vim.lsp.semantic_tokens.refresh()
-					end,
-				})
 				vim.lsp.semantic_tokens.start(bufnr, client.id)
 			end
 		end
-
 		-- Python virtualenv logic
 		local function get_python_path()
 			if vim.env.VIRTUAL_ENV then
@@ -148,7 +140,7 @@ return {
 		end
 
 		-- Server configs below...
-		lspconfig.tsserver.setup({
+		lspconfig.ts_ls.setup({
 			capabilities = capabilities,
 			root_dir = util.root_pattern("package.json", "tsconfig.json", ".git"),
 			settings = {
