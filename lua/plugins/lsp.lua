@@ -54,7 +54,6 @@ return {
 		require("mason-lspconfig").setup({
 			ensure_installed = {
 				"lua_ls",
-				-- "tsserver",
 				"ts_ls",
 				"pyright",
 				"jsonls",
@@ -173,7 +172,8 @@ return {
 		lspconfig.biome.setup({
 			cmd = { vim.fn.stdpath("data") .. "/mason/bin/biome", "lsp-proxy" },
 			root_dir = util.root_pattern("biome.json", "package.json", ".git"),
-			filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact", "json" },
+			-- filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact", "json" },
+			filetypes = { "json" },
 			settings = {
 				biome = {
 					files = { exclude = { "node_modules", "dist" } },
