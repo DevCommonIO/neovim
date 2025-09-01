@@ -119,7 +119,7 @@ return {
 		keymap("n", "<F4>", function()
 			require("telescope").extensions.dap.configurations()
 		end, { desc = "Select DAP config" })
-		keymap("n", "<Leader>db", dap.toggle_breakpoint, { desc = "Toggle Breakpoint" })
+		keymap("n", "<Leader>b", dap.toggle_breakpoint, { desc = "Toggle Breakpoint" })
 		keymap("n", "<Leader>dr", dap.repl.open, { desc = "Open REPL" })
 		keymap("n", "<Leader>de", function()
 			require("dap.ui.widgets").hover()

@@ -54,7 +54,7 @@ return {
 		require("mason-lspconfig").setup({
 			ensure_installed = {
 				"lua_ls",
-				"ts_ls",
+				-- "tsserver",
 				"pyright",
 				"jsonls",
 				"emmet_ls",
@@ -71,6 +71,7 @@ return {
 				vim.lsp.semantic_tokens.start(bufnr, client.id)
 			end
 		end
+
 		-- Python virtualenv logic
 		local function get_python_path()
 			if vim.env.VIRTUAL_ENV then
@@ -115,6 +116,7 @@ return {
 				local opts = { buffer = ev.buf, silent = true }
 				keymap.set("n", "gR", "<cmd>Telescope lsp_references<CR>", opts)
 				keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
+				-- Remap gD to just fallback to definitions
 				keymap.set("n", "gd", "<cmd>Telescope lsp_definitions<CR>", opts)
 				keymap.set("n", "gi", "<cmd>Telescope lsp_implementations<CR>", opts)
 				keymap.set("n", "gt", "<cmd>Telescope lsp_type_definitions<CR>", opts)
@@ -137,16 +139,6 @@ return {
 		for type, icon in pairs({ Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }) do
 			vim.fn.sign_define("DiagnosticSign" .. type, { text = icon, texthl = "DiagnosticSign" .. type })
 		end
-
-		-- Server configs below...
-		lspconfig.ts_ls.setup({
-			capabilities = capabilities,
-			root_dir = util.root_pattern("package.json", "tsconfig.json", ".git"),
-			settings = {
-				typescript = { suggest = { completeFunctionCalls = true } },
-				javascript = { suggest = { completeFunctionCalls = true } },
-			},
-		})
 
 		lspconfig.lua_ls.setup({
 			capabilities = capabilities,
@@ -172,8 +164,7 @@ return {
 		lspconfig.biome.setup({
 			cmd = { vim.fn.stdpath("data") .. "/mason/bin/biome", "lsp-proxy" },
 			root_dir = util.root_pattern("biome.json", "package.json", ".git"),
-			-- filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact", "json" },
-			filetypes = { "json" },
+			filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact", "json" },
 			settings = {
 				biome = {
 					files = { exclude = { "node_modules", "dist" } },
