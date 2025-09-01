@@ -33,14 +33,14 @@ return {
 		{
 			"<leader>cC",
 			function()
-				local q = vim.fn.input("Copilot (#buffers:list): ")
+				local q = vim.fn.input("Copilot (#buffer:visible): ")
 				if q ~= "" then
-					require("CopilotChat").ask("#buffers:list " .. q)
+					require("CopilotChat").ask("#buffers:visible " .. q)
 					-- or, if you prefer the selection API:
 					-- require("CopilotChat").ask(q, { selection = require("CopilotChat.select").buffer })
 				end
 			end,
-			desc = "CopilotChat: Ask about opened buffers",
+			desc = "CopilotChat: Ask about opened buffer",
 			mode = "n",
 		},
 		{
@@ -111,15 +111,6 @@ return {
 			width = 100,
 			title = " Copilot Chat ",
 			border = "rounded",
-		},
-		model = {
-			name = "gpt-5",
-			params = {
-				temperature = 0.1,
-				top_p = 1,
-				frequency_penalty = 0,
-				presence_penalty = 0,
-			},
 		},
 	},
 	config = function(_, opts)

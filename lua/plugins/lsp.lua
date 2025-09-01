@@ -54,7 +54,7 @@ return {
 		require("mason-lspconfig").setup({
 			ensure_installed = {
 				"lua_ls",
-				-- "tsserver",
+				"tsserver",
 				"pyright",
 				"jsonls",
 				"emmet_ls",
@@ -68,6 +68,14 @@ return {
 		-- 🧠 Enable semantic highlighting per buffer
 		local function enable_semantic_tokens(client, bufnr)
 			if client.server_capabilities.semanticTokensProvider then
+				local augroup = vim.api.nvim_create_augroup("SemanticTokens", {})
+				vim.api.nvim_create_autocmd("TextChanged", {
+					group = augroup,
+					buffer = bufnr,
+					callback = function()
+						vim.lsp.semantic_tokens.refresh()
+					end,
+				})
 				vim.lsp.semantic_tokens.start(bufnr, client.id)
 			end
 		end
@@ -116,7 +124,6 @@ return {
 				local opts = { buffer = ev.buf, silent = true }
 				keymap.set("n", "gR", "<cmd>Telescope lsp_references<CR>", opts)
 				keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
-				-- Remap gD to just fallback to definitions
 				keymap.set("n", "gd", "<cmd>Telescope lsp_definitions<CR>", opts)
 				keymap.set("n", "gi", "<cmd>Telescope lsp_implementations<CR>", opts)
 				keymap.set("n", "gt", "<cmd>Telescope lsp_type_definitions<CR>", opts)
@@ -139,6 +146,16 @@ return {
 		for type, icon in pairs({ Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }) do
 			vim.fn.sign_define("DiagnosticSign" .. type, { text = icon, texthl = "DiagnosticSign" .. type })
 		end
+
+		-- Server configs below...
+		lspconfig.tsserver.setup({
+			capabilities = capabilities,
+			root_dir = util.root_pattern("package.json", "tsconfig.json", ".git"),
+			settings = {
+				typescript = { suggest = { completeFunctionCalls = true } },
+				javascript = { suggest = { completeFunctionCalls = true } },
+			},
+		})
 
 		lspconfig.lua_ls.setup({
 			capabilities = capabilities,
