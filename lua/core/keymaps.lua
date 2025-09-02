@@ -84,23 +84,3 @@ vim.keymap.set("n", "<leader>cx", function()
 	vim.fn.setreg("+", filepath) -- Copy to system clipboard
 	print("Copied: " .. filepath)
 end, { desc = "Copy current file path" })
-keymap.set("n", "<leader>co", function()
-	local api = vim.api
-	local current_buf = api.nvim_get_current_buf()
-
-	-- Skip if buffer is special type
-	if vim.bo[current_buf].buftype ~= "" then
-		vim.cmd("close")
-		return
-	end
-
-	-- Try to switch before delete
-	vim.cmd("bprevious")
-	vim.cmd("bd " .. current_buf)
-
-	-- If we're now in nvim-tree and no other listed buffers
-	local new_buf = api.nvim_get_current_buf()
-	if vim.bo[new_buf].filetype == "NvimTree" and #vim.fn.getbufinfo({ buflisted = 1 }) == 1 then
-		vim.cmd("quit")
-	end
-end, { desc = "Smart close current buffer + window" })

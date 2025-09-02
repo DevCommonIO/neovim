@@ -1,6 +1,7 @@
 return {
 	"neovim/nvim-lspconfig",
-	event = { "BufReadPre", "BufNewFile" },
+	-- event = { "BufReadPre", "BufNewFile" },
+	event = { "BufReadPre" },
 	dependencies = {
 		"williamboman/mason.nvim",
 		{
@@ -10,7 +11,7 @@ return {
 		"hrsh7th/cmp-nvim-lsp",
 		{ "antosha417/nvim-lsp-file-operations", config = true },
 		{ "folke/neodev.nvim", opts = {} },
-		{ -- ✅ Added TokyoNight colorscheme
+		{
 			"folke/tokyonight.nvim",
 			lazy = false,
 			priority = 1000,
@@ -35,6 +36,13 @@ return {
 		local util = require("lspconfig.util")
 		local keymap = vim.keymap
 
+		vim.api.nvim_create_autocmd("FileType", {
+			pattern = "typescriptreact",
+			callback = function()
+				print("FileType is correctly set to typescriptreact")
+			end,
+		})
+
 		-- ✅ Add semantic token capabilities
 		capabilities.textDocument.semanticTokens = {
 			dynamicRegistration = false,
@@ -54,7 +62,6 @@ return {
 		require("mason-lspconfig").setup({
 			ensure_installed = {
 				"lua_ls",
-				-- "tsserver",
 				"ts_ls",
 				"pyright",
 				"jsonls",
@@ -72,6 +79,7 @@ return {
 				vim.lsp.semantic_tokens.start(bufnr, client.id)
 			end
 		end
+
 		-- Python virtualenv logic
 		local function get_python_path()
 			if vim.env.VIRTUAL_ENV then
@@ -86,23 +94,32 @@ return {
 			return vim.fn.exepath("python3") or vim.fn.exepath("python") or "python"
 		end
 
-		-- LSP diagnostics float config
+		-- ✅ Inline + float diagnostics
 		vim.diagnostic.config({
+			virtual_text = {
+				prefix = "●",
+				source = "if_many",
+				spacing = 2,
+			},
+			signs = true,
+			underline = true,
+			update_in_insert = false,
+			severity_sort = true,
 			float = {
 				focusable = true,
 				style = "minimal",
 				border = "rounded",
 				source = "always",
-				max_width = math.floor(vim.o.columns * 0.6),
-				width = 80,
-				wrap = true,
+				header = "",
+				prefix = "",
 			},
-			update_in_insert = false,
 		})
 
+		-- ✅ Show float on cursor hold
 		vim.api.nvim_create_autocmd("CursorHold", {
+			pattern = "*",
 			callback = function()
-				vim.diagnostic.open_float(nil, { focusable = false, timeout = 4000 })
+				vim.diagnostic.open_float(nil, { focus = false })
 			end,
 		})
 
@@ -140,12 +157,50 @@ return {
 		end
 
 		-- Server configs below...
+		-- lspconfig.ts_ls.setup({
+		-- 	capabilities = capabilities,
+		-- 	root_dir = util.root_pattern("package.json", "tsconfig.json", ".git"),
+		--
+		-- 	filetypes = { "typescript", "typescriptreact", "javascript", "javascriptreact", "json" },
+		-- 	settings = {
+		-- 		typescript = { suggest = { completeFunctionCalls = true } },
+		-- 		javascript = { suggest = { completeFunctionCalls = true } },
+		-- 	},
+		-- })
+		--
+		-- Server configs below...
 		lspconfig.ts_ls.setup({
 			capabilities = capabilities,
-			root_dir = util.root_pattern("package.json", "tsconfig.json", ".git"),
+			filetypes = {
+				"typescript",
+				"typescriptreact",
+				"typescript.tsx",
+				"javascript",
+				"javascriptreact",
+				"javascript.jsx",
+			},
+			root_dir = function(fname)
+				local root = util.root_pattern("package.json", "tsconfig.json", ".git")(fname)
+				if not root then
+					vim.schedule(function()
+						vim.notify("[ts_ls] No project root found. Falling back to CWD", vim.log.levels.WARN)
+					end)
+					return vim.fn.getcwd()
+				end
+
+				vim.schedule(function()
+					vim.notify("[ts_ls] root_dir = " .. root, vim.log.levels.INFO)
+				end)
+
+				return root
+			end,
 			settings = {
-				typescript = { suggest = { completeFunctionCalls = true } },
-				javascript = { suggest = { completeFunctionCalls = true } },
+				typescript = {
+					suggest = { completeFunctionCalls = true },
+				},
+				javascript = {
+					suggest = { completeFunctionCalls = true },
+				},
 			},
 		})
 
@@ -173,7 +228,7 @@ return {
 		lspconfig.biome.setup({
 			cmd = { vim.fn.stdpath("data") .. "/mason/bin/biome", "lsp-proxy" },
 			root_dir = util.root_pattern("biome.json", "package.json", ".git"),
-			filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact", "json" },
+			filetypes = { "json" },
 			settings = {
 				biome = {
 					files = { exclude = { "node_modules", "dist" } },
