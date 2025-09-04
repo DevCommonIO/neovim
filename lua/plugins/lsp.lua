@@ -1,55 +1,26 @@
 return {
 	"neovim/nvim-lspconfig",
-	-- event = { "BufReadPre", "BufNewFile" },
 	event = { "BufReadPre" },
+
 	dependencies = {
 		"williamboman/mason.nvim",
-		{
-			"williamboman/mason-lspconfig.nvim",
-			version = ">=2.0.0",
-		},
+		{ "williamboman/mason-lspconfig.nvim", version = ">=2.0.0" },
 		"hrsh7th/cmp-nvim-lsp",
 		{ "antosha417/nvim-lsp-file-operations", config = true },
 		{ "folke/neodev.nvim", opts = {} },
-		{
-			"folke/tokyonight.nvim",
-			lazy = false,
-			priority = 1000,
-			config = function()
-				require("tokyonight").setup({
-					style = "moon",
-					transparent = false,
-					styles = {
-						comments = { italic = true },
-						keywords = { italic = false },
-						functions = { bold = true },
-					},
-				})
-				vim.cmd.colorscheme("tokyonight")
-			end,
-		},
 	},
 	config = function()
 		local lspconfig = require("lspconfig")
-		local cmp_nvim_lsp = require("cmp_nvim_lsp")
-		local capabilities = cmp_nvim_lsp.default_capabilities()
 		local util = require("lspconfig.util")
-		local keymap = vim.keymap
+		local cmp_nvim_lsp = require("cmp_nvim_lsp")
 
-		vim.api.nvim_create_autocmd("FileType", {
-			pattern = "typescriptreact",
-			callback = function()
-				print("FileType is correctly set to typescriptreact")
-			end,
-		})
-
-		-- ✅ Add semantic token capabilities
+		---------------------------------------------------------------------------
+		-- Capabilities
+		---------------------------------------------------------------------------
+		local capabilities = cmp_nvim_lsp.default_capabilities()
 		capabilities.textDocument.semanticTokens = {
 			dynamicRegistration = false,
-			requests = {
-				range = true,
-				full = true,
-			},
+			requests = { range = true, full = true },
 			tokenTypes = {},
 			tokenModifiers = {},
 			formats = { "relative" },
@@ -57,7 +28,96 @@ return {
 			overlappingTokenSupport = false,
 		}
 
-		-- Setup Mason
+		---------------------------------------------------------------------------
+		-- Helpers
+		---------------------------------------------------------------------------
+		local function enable_semantic_tokens(client, bufnr)
+			if client and client.server_capabilities.semanticTokensProvider then
+				vim.lsp.semantic_tokens.start(bufnr, client.id)
+			end
+		end
+
+		-- If you’re using Conform/Prettier/etc., keep LSP formatting off by default.
+		local function disable_formatting(client)
+			client.server_capabilities.documentFormattingProvider = false
+			client.server_capabilities.documentRangeFormattingProvider = false
+		end
+
+		local function get_python_path()
+			if vim.env.VIRTUAL_ENV then
+				return vim.env.VIRTUAL_ENV .. "/bin/python"
+			end
+			for _, pattern in ipairs({ "venv", ".venv" }) do
+				local match = vim.fn.glob(vim.fn.getcwd() .. "/" .. pattern)
+				if match ~= "" then
+					return match .. "/bin/python"
+				end
+			end
+			return vim.fn.exepath("python3") or vim.fn.exepath("python") or "python"
+		end
+
+		---------------------------------------------------------------------------
+		-- Diagnostics UI
+		---------------------------------------------------------------------------
+		vim.diagnostic.config({
+			virtual_text = { prefix = "●", source = "if_many", spacing = 2 },
+			signs = true,
+			underline = true,
+			update_in_insert = false,
+			severity_sort = true,
+			float = {
+				focusable = true,
+				style = "minimal",
+				border = "rounded",
+				source = "always",
+				header = "",
+				prefix = "",
+			},
+		})
+
+		for type, icon in pairs({ Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }) do
+			vim.fn.sign_define("DiagnosticSign" .. type, { text = icon, texthl = "DiagnosticSign" .. type })
+		end
+
+		-- Show diagnostic float on hold (quiet, non-stealing focus)
+		vim.api.nvim_create_autocmd("CursorHold", {
+			pattern = "*",
+			callback = function()
+				vim.diagnostic.open_float(nil, { focus = false })
+			end,
+		})
+
+		---------------------------------------------------------------------------
+		-- on_attach: keymaps + semantic tokens + (optional) formatting off
+		---------------------------------------------------------------------------
+		local function on_attach(client, bufnr)
+			enable_semantic_tokens(client, bufnr)
+			disable_formatting(client) -- comment out if you want LSP formatting
+
+			local opts = { buffer = bufnr, silent = true }
+			local keymap = vim.keymap
+			keymap.set("n", "gR", "<cmd>Telescope lsp_references<CR>", opts)
+			keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
+			keymap.set("n", "gd", "<cmd>Telescope lsp_definitions<CR>", opts)
+			keymap.set("n", "gi", "<cmd>Telescope lsp_implementations<CR>", opts)
+			keymap.set("n", "gt", "<cmd>Telescope lsp_type_definitions<CR>", opts)
+			keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
+			keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+			keymap.set("n", "<leader>D", "<cmd>Telescope diagnostics bufnr=0<CR>", opts)
+			keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts)
+			keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
+			keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
+			keymap.set("n", "K", vim.lsp.buf.hover, opts)
+			keymap.set("n", "<leader>rs", ":LspRestart<CR>", opts)
+			keymap.set("n", "<leader>q", function()
+				vim.diagnostic.setloclist()
+				vim.cmd("lopen")
+			end, { desc = "Open diagnostics in a split" })
+		end
+
+		---------------------------------------------------------------------------
+		-- Mason
+		---------------------------------------------------------------------------
 		require("mason").setup()
 		require("mason-lspconfig").setup({
 			ensure_installed = {
@@ -73,104 +133,13 @@ return {
 			automatic_installation = true,
 		})
 
-		-- 🧠 Enable semantic highlighting per buffer
-		local function enable_semantic_tokens(client, bufnr)
-			if client.server_capabilities.semanticTokensProvider then
-				vim.lsp.semantic_tokens.start(bufnr, client.id)
-			end
-		end
-
-		-- Python virtualenv logic
-		local function get_python_path()
-			if vim.env.VIRTUAL_ENV then
-				return vim.env.VIRTUAL_ENV .. "/bin/python"
-			end
-			for _, pattern in ipairs({ "venv", ".venv" }) do
-				local match = vim.fn.glob(vim.fn.getcwd() .. "/" .. pattern)
-				if match ~= "" then
-					return match .. "/bin/python"
-				end
-			end
-			return vim.fn.exepath("python3") or vim.fn.exepath("python") or "python"
-		end
-
-		-- ✅ Inline + float diagnostics
-		vim.diagnostic.config({
-			virtual_text = {
-				prefix = "●",
-				source = "if_many",
-				spacing = 2,
-			},
-			signs = true,
-			underline = true,
-			update_in_insert = false,
-			severity_sort = true,
-			float = {
-				focusable = true,
-				style = "minimal",
-				border = "rounded",
-				source = "always",
-				header = "",
-				prefix = "",
-			},
-		})
-
-		-- ✅ Show float on cursor hold
-		vim.api.nvim_create_autocmd("CursorHold", {
-			pattern = "*",
-			callback = function()
-				vim.diagnostic.open_float(nil, { focus = false })
-			end,
-		})
-
-		-- LSP keymaps on attach
-		vim.api.nvim_create_autocmd("LspAttach", {
-			group = vim.api.nvim_create_augroup("UserLspConfig", {}),
-			callback = function(ev)
-				local client = vim.lsp.get_client_by_id(ev.data.client_id)
-				enable_semantic_tokens(client, ev.buf)
-
-				local opts = { buffer = ev.buf, silent = true }
-				keymap.set("n", "gR", "<cmd>Telescope lsp_references<CR>", opts)
-				keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
-				keymap.set("n", "gd", "<cmd>Telescope lsp_definitions<CR>", opts)
-				keymap.set("n", "gi", "<cmd>Telescope lsp_implementations<CR>", opts)
-				keymap.set("n", "gt", "<cmd>Telescope lsp_type_definitions<CR>", opts)
-				keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
-				keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-				keymap.set("n", "<leader>D", "<cmd>Telescope diagnostics bufnr=0<CR>", opts)
-				keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts)
-				keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
-				keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
-				keymap.set("n", "K", vim.lsp.buf.hover, opts)
-				keymap.set("n", "<leader>rs", ":LspRestart<CR>", opts)
-				keymap.set("n", "<leader>q", function()
-					vim.diagnostic.setloclist()
-					vim.cmd("lopen")
-				end, { desc = "Open diagnostics in a split" })
-			end,
-		})
-
-		-- Diagnostic signs
-		for type, icon in pairs({ Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }) do
-			vim.fn.sign_define("DiagnosticSign" .. type, { text = icon, texthl = "DiagnosticSign" .. type })
-		end
-
-		-- Server configs below...
-		-- lspconfig.ts_ls.setup({
-		-- 	capabilities = capabilities,
-		-- 	root_dir = util.root_pattern("package.json", "tsconfig.json", ".git"),
-		--
-		-- 	filetypes = { "typescript", "typescriptreact", "javascript", "javascriptreact", "json" },
-		-- 	settings = {
-		-- 		typescript = { suggest = { completeFunctionCalls = true } },
-		-- 		javascript = { suggest = { completeFunctionCalls = true } },
-		-- 	},
-		-- })
-		--
-		-- Server configs below...
+		---------------------------------------------------------------------------
+		-- Servers
+		---------------------------------------------------------------------------
+		-- TypeScript / JavaScript (keep it simple)
 		lspconfig.ts_ls.setup({
 			capabilities = capabilities,
+			on_attach = on_attach,
 			filetypes = {
 				"typescript",
 				"typescriptreact",
@@ -180,32 +149,60 @@ return {
 				"javascript.jsx",
 			},
 			root_dir = function(fname)
-				local root = util.root_pattern("package.json", "tsconfig.json", ".git")(fname)
-				if not root then
-					vim.schedule(function()
-						vim.notify("[ts_ls] No project root found. Falling back to CWD", vim.log.levels.WARN)
-					end)
-					return vim.fn.getcwd()
-				end
-
-				vim.schedule(function()
-					vim.notify("[ts_ls] root_dir = " .. root, vim.log.levels.INFO)
-				end)
-
-				return root
+				local root = util.root_pattern("tsconfig.json")(fname)
+					or util.root_pattern("package.json", ".git")(fname)
+				return root or vim.fn.getcwd()
 			end,
 			settings = {
 				typescript = {
 					suggest = { completeFunctionCalls = true },
+					preferences = {
+						preferGoToSourceDefinition = true, -- 👈 key fix
+					},
 				},
 				javascript = {
 					suggest = { completeFunctionCalls = true },
+					preferences = {
+						preferGoToSourceDefinition = true, -- 👈 for JS/JSX too
+					},
 				},
 			},
+			flags = { debounce_text_changes = 150 },
 		})
-
+		-- lspconfig.ts_ls.setup({
+		-- 	capabilities = capabilities,
+		-- 	on_attach = on_attach,
+		-- 	filetypes = {
+		-- 		"typescript",
+		-- 		"typescriptreact",
+		-- 		"typescript.tsx",
+		-- 		"javascript",
+		-- 		"javascriptreact",
+		-- 		"javascript.jsx",
+		-- 	},
+		-- 	root_dir = function(fname)
+		-- 		-- Prefer nearest tsconfig.json; fallback to package.json or .git or CWD
+		-- 		local root = util.root_pattern("tsconfig.json")(fname)
+		-- 			or util.root_pattern("package.json", ".git")(fname)
+		-- 		if not root then
+		-- 			vim.schedule(function()
+		-- 				vim.notify("[ts_ls] No project root found. Using CWD", vim.log.levels.WARN)
+		-- 			end)
+		-- 			return vim.fn.getcwd()
+		-- 		end
+		-- 		return root
+		-- 	end,
+		-- 	settings = {
+		-- 		typescript = { suggest = { completeFunctionCalls = true } },
+		-- 		javascript = { suggest = { completeFunctionCalls = true } },
+		-- 	},
+		-- 	flags = { debounce_text_changes = 150 },
+		-- })
+		--
+		-- Lua
 		lspconfig.lua_ls.setup({
 			capabilities = capabilities,
+			on_attach = on_attach,
 			settings = {
 				Lua = {
 					runtime = { version = "LuaJIT" },
@@ -216,8 +213,10 @@ return {
 			},
 		})
 
+		-- Python
 		lspconfig.pyright.setup({
 			capabilities = capabilities,
+			on_attach = on_attach,
 			before_init = function(_, config)
 				config.settings = config.settings or {}
 				config.settings.python = config.settings.python or {}
@@ -225,7 +224,10 @@ return {
 			end,
 		})
 
+		-- JSON via Biome LSP proxy (only for JSON)
 		lspconfig.biome.setup({
+			on_attach = on_attach,
+			capabilities = capabilities,
 			cmd = { vim.fn.stdpath("data") .. "/mason/bin/biome", "lsp-proxy" },
 			root_dir = util.root_pattern("biome.json", "package.json", ".git"),
 			filetypes = { "json" },
@@ -238,15 +240,18 @@ return {
 			},
 		})
 
+		-- GraphQL
 		lspconfig.graphql.setup({
 			capabilities = capabilities,
+			on_attach = on_attach,
 			filetypes = { "graphql", "gql", "svelte", "typescriptreact", "javascriptreact" },
 		})
 
+		-- Svelte
 		lspconfig.svelte.setup({
 			capabilities = capabilities,
-			root_dir = util.root_pattern("package.json", ".git"),
-			on_attach = function(client)
+			on_attach = function(client, bufnr)
+				on_attach(client, bufnr)
 				vim.api.nvim_create_autocmd("BufWritePost", {
 					pattern = { "*.js", "*.ts" },
 					callback = function(ctx)
@@ -254,10 +259,13 @@ return {
 					end,
 				})
 			end,
+			root_dir = util.root_pattern("package.json", ".git"),
 		})
 
+		-- Emmet
 		lspconfig.emmet_ls.setup({
 			capabilities = capabilities,
+			on_attach = on_attach,
 			filetypes = {
 				"html",
 				"typescriptreact",
