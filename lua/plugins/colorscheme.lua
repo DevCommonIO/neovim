@@ -14,16 +14,7 @@ return {
 				functions = { bold = true },
 				variables = {},
 			},
-			-- plugins = {
-			-- 	bufferline = false, -- ⬅ turn off
-			-- 	indent_blankline = true,
-			-- 	nvim_tree = true,
-			-- 	telescope = true,
-			-- 	treesitter = true,
-			-- 	gitsigns = false,
-			-- 	lsp = true,
-			-- },
-		})
+	})
 		vim.cmd.colorscheme("monokai-pro")
 	end,
 }
