@@ -19,19 +19,31 @@ return {
 			desc = "CopilotChat: Ask about current buffer",
 			mode = "n",
 		},
-
-		-- Ask about all visible buffers
+		-- All listed buffers (sticky). Use this if you mean “all opened”.
 		{
 			"<leader>cC",
 			function()
-				local q = vim.fn.input("Copilot (#buffers:visible): ")
+				local q = vim.fn.input("Copilot (#buffers): ")
 				if q ~= "" then
-					require("CopilotChat").ask("#buffers:visible " .. q)
+					require("CopilotChat").ask("> #buffers\n" .. q)
 				end
 			end,
-			desc = "CopilotChat: Ask about visible buffers",
+			desc = "CopilotChat: all listed buffers",
 			mode = "n",
 		},
+
+		--	Ask about all visible buffers
+		-- {
+		-- 	"<leader>cC",
+		-- 	function()
+		-- 		local q = vim.fn.input("Copilot (#buffers): ")
+		-- 		if q ~= "" then
+		-- 			require("CopilotChat").ask("#buffers " .. q)
+		-- 		end
+		-- 	end,
+		-- 	desc = "CopilotChat: Ask about visible buffers",
+		-- 	mode = "n",
+		-- },
 
 		-- Reset conversation (useful when switching topics)
 		{
