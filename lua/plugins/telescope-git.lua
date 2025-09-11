@@ -5,8 +5,8 @@ return {
 		dependencies = {
 			"nvim-telescope/telescope.nvim",
 			"nvim-lua/plenary.nvim",
-			"tpope/vim-fugitive", -- required to open historical file versions
-			"sindrets/diffview.nvim", -- for pretty side-by-side diffs
+			"tpope/vim-fugitive", -- open historical snapshots
+			"sindrets/diffview.nvim", -- side-by-side diffs + history UI
 		},
 		config = function()
 			local ok_t, telescope = pcall(require, "telescope")
@@ -16,16 +16,58 @@ return {
 
 			local actions = require("telescope.actions")
 			local action_state = require("telescope.actions.state")
+			local pickers = require("telescope.pickers")
+			local finders = require("telescope.finders")
+			local conf = require("telescope.config").values
 
-			-- helper: open Diffview for the selected commit against current file
+			-- helper: open Diffview for selected commit against current file
 			local function open_diff_for_entry(prompt_bufnr)
 				local entry = action_state.get_selected_entry()
 				actions.close(prompt_bufnr)
 				if not entry or not entry.value then
 					return
 				end
-				-- entry.value is the commit SHA; diff only that commit’s change for current file
 				vim.cmd("DiffviewOpen " .. entry.value .. "^! -- %")
+			end
+
+			-- custom picker: list git unmerged files (conflicts)
+			local function telescope_unmerged_files()
+				local files = vim.fn.systemlist({ "git", "diff", "--name-only", "--diff-filter=U" })
+				if vim.v.shell_error ~= 0 then
+					vim.notify("git diff failed", vim.log.levels.ERROR)
+					return
+				end
+				if #files == 0 then
+					vim.notify("No merge conflicts 🎉", vim.log.levels.INFO)
+					return
+				end
+
+				pickers
+					.new({}, {
+						prompt_title = "Unmerged files (conflicts)",
+						finder = finders.new_table(files),
+						sorter = conf.generic_sorter({}),
+						attach_mappings = function(bufnr, map)
+							local function open_file()
+								local entry = action_state.get_selected_entry()
+								actions.close(bufnr)
+								if entry and entry[1] then
+									vim.cmd.edit(entry[1])
+								end
+							end
+							local function open_diffview()
+								actions.close(bufnr)
+								vim.cmd("DiffviewOpen") -- open merge/diff UI
+								vim.cmd("DiffviewFocusFiles") -- show file list to pick from
+							end
+							map("n", "<CR>", open_file)
+							map("i", "<CR>", open_file)
+							map("n", "d", open_diffview)
+							map("i", "<C-d>", open_diffview)
+							return true
+						end,
+					})
+					:find()
 			end
 
 			telescope.setup({
@@ -46,15 +88,18 @@ return {
 			local map = vim.keymap.set
 			local builtin = require("telescope.builtin")
 
-			-- Current file history → pick a commit → <CR> opens Diffview
+			-- Current file history → pick commit → <CR>/d opens Diffview
 			map("n", "<leader>gh", function()
 				require("telescope").extensions.git_file_history.git_file_history()
 			end, { desc = "Git: file history (current buffer)" })
 
-			-- (Optional) Open Diffview’s native history UI for current file
+			-- Diffview’s native file history UI
 			map("n", "<leader>gH", "<cmd>DiffviewFileHistory %<CR>", { desc = "Git: file history (Diffview)" })
 
-			-- (Optional) Other handy git pickers
+			-- Conflicts (unmerged files) picker
+			map("n", "<leader>gU", telescope_unmerged_files, { desc = "Git: unmerged files (conflicts)" })
+
+			-- Other handy git pickers
 			map("n", "<leader>gC", builtin.git_commits, { desc = "Git: commits (repo)" })
 			map("n", "<leader>gB", builtin.git_bcommits, { desc = "Git: commits (buffer)" })
 			map("n", "<leader>gs", builtin.git_status, { desc = "Git: status" })
