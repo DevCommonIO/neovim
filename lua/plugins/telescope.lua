@@ -11,20 +11,34 @@ return {
 		local builtin = require("telescope.builtin")
 
 		-- helper to get visual selection
-		local function get_visual_selection()
-			local _, csrow, cscol, _ = unpack(vim.fn.getpos("'<"))
-			local _, cerow, cecol, _ = unpack(vim.fn.getpos("'>"))
-			if csrow == cerow then
-				return string.sub(vim.fn.getline(csrow), cscol, cecol)
-			end
-			local lines = vim.fn.getline(csrow, cerow)
-			lines[1] = string.sub(lines[1], cscol)
-			lines[#lines] = string.sub(lines[#lines], 1, cecol)
-			return table.concat(lines, "\n")
+		local function get_visual_selection_text()
+			local save_reg = vim.fn.getreg('"')
+			local save_type = vim.fn.getregtype('"')
+			vim.cmd('noau normal! "vy')
+			local text = vim.fn.getreg('"')
+			vim.fn.setreg('"', save_reg, save_type)
+			text = text:gsub("\n", " "):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
+			return text
 		end
+		-- local function get_visual_selection()
+		-- 	local _, csrow, cscol, _ = unpack(vim.fn.getpos("'<"))
+		-- 	local _, cerow, cecol, _ = unpack(vim.fn.getpos("'>"))
+		-- 	if csrow == cerow then
+		-- 		return string.sub(vim.fn.getline(csrow), cscol, cecol)
+		-- 	end
+		-- 	local lines = vim.fn.getline(csrow, cerow)
+		-- 	lines[1] = string.sub(lines[1], cscol)
+		-- 	lines[#lines] = string.sub(lines[#lines], 1, cecol)
+		-- 	return table.concat(lines, "\n")
+		-- end
 
 		local map = vim.keymap.set
 		local opts = { noremap = true, silent = true }
+		local base_opts = { noremap = true, silent = true }
+
+		local function with_desc(desc)
+			return vim.tbl_extend("force", base_opts, { desc = desc })
+		end
 
 		-- Core finders
 		map("n", "<leader>ff", builtin.find_files, { desc = "Files", unpack(opts) })
@@ -44,11 +58,6 @@ return {
 		-- LSP helpers
 		map("n", "<leader>fd", builtin.lsp_document_symbols, { desc = "Document symbols", unpack(opts) })
 		map("n", "<leader>fu", builtin.lsp_references, { desc = "Symbol references", unpack(opts) })
-		-- Grep visual selection
-		map("v", "<leader>fs", function()
-			local text = get_visual_selection():gsub("\n", " ")
-			builtin.live_grep({ default_text = text, case_mode = "ignore_case" })
-		end, { desc = "Grep visual selection", unpack(opts) })
 
 		-- Buffer fuzzy search by word/selection
 		map("n", "<leader>fw", function()
@@ -56,20 +65,41 @@ return {
 			builtin.current_buffer_fuzzy_find({ default_text = word, case_mode = "ignore_case" })
 		end, { desc = "Fuzzy find word in buffer", unpack(opts) })
 
-		map("v", "<leader>fw", function()
-			local text = get_visual_selection():gsub("\n", " ")
-			builtin.current_buffer_fuzzy_find({ default_text = text, case_mode = "ignore_case" })
-		end, { desc = "Fuzzy find selection in buffer", unpack(opts) })
+		map("x", "<leader>fs", function()
+			local text = get_visual_selection_text()
+			if text ~= "" then
+				-- literal string search; respects ripgrep smart-case
+				-- builtin.grep_string({ search = text })
+				builtin.live_grep({ default_text = text, case_mode = "ignore_case" })
+			else
+				builtin.live_grep()
+			end
+		end, with_desc("Grep visual selection"))
+
+		-- Fuzzy find selection in current buffer
+		map("x", "<leader>fw", function()
+			local text = get_visual_selection_text()
+			if text ~= "" then
+				builtin.current_buffer_fuzzy_find({ default_text = text })
+			else
+				builtin.current_buffer_fuzzy_find()
+			end
+		end, with_desc("Fuzzy find selection in buffer"))
 
 		-- Telescope setup
 		require("telescope").setup({
 			defaults = {
 				layout_strategy = "horizontal",
 				layout_config = {
+					horizontal = {
+						width = 0.96, -- use 90% of the screen width
+						height = 0.94, -- use 80% of the screen height
+					},
 					prompt_position = "top", -- <== put input at the top
-					preview_width = 0.6, -- optional: tweak preview size
+					preview_width = 0.55, -- optional: tweak preview size
 				},
 				sorting_strategy = "ascending", -- makes results grow down from prompt
+				case_mode = "smart_case", -- or "ignore_case" or "respect_case"
 				mappings = {
 					i = {
 						["<C-k>"] = "move_selection_previous",
@@ -78,7 +108,13 @@ return {
 				},
 			},
 			pickers = {
-				find_files = { hidden = true }, -- show dotfiles
+				find_files = {
+					hidden = true,
+					layout_config = { horizontal = { preview_width = 0.48 } }, -- per-picker tweak
+				},
+				live_grep = {
+					layout_config = { horizontal = { preview_width = 0.46 } },
+				},
 			},
 		})
 

@@ -24,7 +24,6 @@ keymap.set("n", "<leader>-", "<C-x>", { desc = "Decrement number" }) -- decremen
 keymap.set("n", "<leader>cp", "<cmd>Copilot panel<CR>", { desc = "Open Copilot panel" })
 keymap.set("n", "<leader>cr", "<cmd>Copilot panel refresh<CR>", { desc = "Refresh Copilot panel" })
 
-keymap.set("n", "<leader>pv", vim.cmd.Ex) -- exit current page
 -- window management
 keymap.set("n", "<leader>sv", "<C-w>v", { desc = "Split window vertically" }) -- split window vertically
 keymap.set("n", "<leader>sh", "<C-w>s", { desc = "Split window horizontally" }) -- split window horizontally
@@ -47,24 +46,25 @@ keymap.set("n", "<leader>tj", "<C-w>j", { desc = "Move to the terminal split" })
 -- Move back to the previous split (assuming it's on the top)
 keymap.set("n", "<leader>tk", "<C-w>k", { desc = "Move back to the previous split" })
 
-keymap.set("t", "<Esc>", [[<C-\><C-n>]], { desc = "Exit terminal mode" }) -- exit terminal mode using <Esc>
-keymap.set("t", "<C-h>", [[<Cmd>wincmd h<CR>]], { desc = "Move to left window" })
-keymap.set("t", "<C-j>", [[<Cmd>wincmd j<CR>]], { desc = "Move to lower window" })
-keymap.set("t", "<C-k>", [[<Cmd>wincmd k<CR>]], { desc = "Move to upper window" })
-keymap.set("t", "<C-l>", [[<Cmd>wincmd l<CR>]], { desc = "Move to right window" })
-
+-- keymap.set("t", "<Esc>", [[<C-\><C-n>]], { desc = "Exit terminal mode" }) -- exit terminal mode using <Esc>
+-- keymap.set("t", "<C-h>", [[<Cmd>wincmd h<CR>]], { desc = "Move to left window" })
+-- keymap.set("t", "<C-j>", [[<Cmd>wincmd j<CR>]], { desc = "Move to lower window" })
+-- keymap.set("t", "<C-k>", [[<Cmd>wincmd k<CR>]], { desc = "Move to upper window" })
+-- keymap.set("t", "<C-l>", [[<Cmd>wincmd l<CR>]], { desc = "Move to right window" })
+--
 keymap.set("n", "<C-z>", "u", { noremap = true, silent = true })
 keymap.set("n", "<C-y>", "<C-r>", { noremap = true, silent = true })
 
 keymap.set("n", "<S-l>", ":BufferLineCycleNext<CR>", { noremap = true, silent = true })
 keymap.set("n", "<S-h>", ":BufferLineCyclePrev<CR>", { noremap = true, silent = true })
 
-keymap.set("n", "<A-k>", ":m -2<CR>==", { noremap = true, silent = true }) -- Move line up
-keymap.set("n", "<A-j>", ":m +1<CR>==", { noremap = true, silent = true }) -- Move line down
-
-keymap.set("v", "<A-k>", ":m '<-2<CR>gv=gv", { noremap = true, silent = true }) -- Move selection up
-keymap.set("v", "<A-j>", ":m '>+1<CR>gv=gv", { noremap = true, silent = true })
-
+-- keymap.set("n", "<A-k>", ":m -2<CR>==", { noremap = true, silent = true }) -- Move line up
+-- keymap.set("n", "<M-k>", ":m -2<CR>==", { noremap = true, silent = true }) -- Move line up
+-- keymap.set("n", "<D-k>", ":m -2<CR>==", { noremap = true, silent = true }) -- Move line up (Cmd+k)
+-- keymap.set("v", "<A-k>", ":m '<-2<CR>gv=gv", { noremap = true, silent = true }) -- Move selection up
+-- keymap.set("n", "<A-j>", ":m +1<CR>==", { noremap = true, silent = true }) -- Move line down
+-- keymap.set("n", "<D-j>", ":m +1<CR>==", { noremap = true, silent = true }) -- Move line down (Cmd+j)
+--
 keymap.set("n", "<M-Left>", "<C-w>h", { noremap = true, silent = true })
 keymap.set("n", "<M-Down>", "<C-w>j", { noremap = true, silent = true })
 keymap.set("n", "<M-Up>", "<C-w>k", { noremap = true, silent = true })
