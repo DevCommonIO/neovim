@@ -94,6 +94,18 @@ return {
 					vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
 				end, "Toggle inlay hints")
 
+				-- Current buffer → Location List (opens automatically)
+				vim.keymap.set("n", "<leader>ql", function()
+					vim.diagnostic.setloclist({ open = true, bufnr = 0 })
+				end, { desc = "Diagnostics (buffer) → loclist" })
+
+				-- Workspace → Quickfix List (opens automatically)
+				vim.keymap.set("n", "<leader>qL", function()
+					vim.diagnostic.setqflist({ open = true })
+				end, { desc = "Diagnostics (workspace) → quickfix" })
+
+				-- Handy: open float on current line
+				vim.keymap.set("n", "gl", vim.diagnostic.open_float, { desc = "Line diagnostics (float)" })
 				-- Highlight all references to symbol under cursor
 				if client.supports_method("textDocument/documentHighlight") then
 					local grp = vim.api.nvim_create_augroup("lsp_document_highlight_" .. bufnr, { clear = true })

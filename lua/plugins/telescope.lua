@@ -50,11 +50,11 @@ return {
 		map("n", "<leader>tr", builtin.resume, { desc = "Resume", unpack(opts) })
 
 		-- Diagnostics
-		map("n", "<leader>q", function()
+		map("n", "<leader>qt", function()
 			builtin.diagnostics({ bufnr = 0 })
 		end, { desc = "See current buffer diagnostics" })
 
-		map("n", "<leader>Q", builtin.diagnostics, { desc = "See workspace diagnostics" })
+		map("n", "<leader>qw", builtin.diagnostics, { desc = "See workspace diagnostics" })
 		-- LSP helpers
 		map("n", "<leader>fd", builtin.lsp_document_symbols, { desc = "Document symbols", unpack(opts) })
 		map("n", "<leader>fu", builtin.lsp_references, { desc = "Symbol references", unpack(opts) })
@@ -114,6 +114,13 @@ return {
 				},
 				live_grep = {
 					layout_config = { horizontal = { preview_width = 0.46 } },
+				},
+
+				diagnostics = {
+					previewer = true, -- <== enable preview window
+					layout_config = {
+						preview_width = 0.4, -- make preview larger for better readability
+					},
 				},
 			},
 		})

@@ -7,14 +7,14 @@ return {
 			transparent_background = false,
 			terminal_colors = true,
 			devicons = true,
-			filter = "pro", -- "pro" | "classic" | "machine" | "ristretto" | "spectrum" | "octagon"
+			filter = "spectrum", -- "pro" | "classic" | "machine" | "ristretto" | "spectrum" | "octagon"
 			styles = {
 				comments = { italic = true },
 				keywords = { italic = false },
 				functions = { bold = true },
 				variables = {},
 			},
-	})
+		})
 		vim.cmd.colorscheme("monokai-pro")
 	end,
 }

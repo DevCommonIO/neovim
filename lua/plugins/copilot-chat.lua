@@ -6,20 +6,22 @@ return {
 		"nvim-lua/plenary.nvim",
 	},
 	event = "VeryLazy",
+
 	keys = {
-		-- Ask about current buffer
+		-- Ask (current buffer or buffers if extras were added)
 		{
 			"<leader>cc",
 			function()
-				local q = vim.fn.input("Copilot (#buffer): ")
+				local q = vim.fn.input("Copilot (buffer/buffers): ")
 				if q ~= "" then
-					require("CopilotChat").ask("#buffer " .. q)
+					require("CopilotChat").ask(q)
 				end
 			end,
-			desc = "CopilotChat: Ask about current buffer",
+			desc = "CopilotChat: Ask (buffer/buffers)",
 			mode = "n",
 		},
-		-- All listed buffers (sticky). Use this if you mean “all opened”.
+
+		-- Ask across all listed buffers
 		{
 			"<leader>cC",
 			function()
@@ -28,34 +30,44 @@ return {
 					require("CopilotChat").ask("> #buffers\n" .. q)
 				end
 			end,
-			desc = "CopilotChat: all listed buffers",
+			desc = "CopilotChat: Ask (all listed buffers)",
 			mode = "n",
 		},
 
-		--	Ask about all visible buffers
-		-- {
-		-- 	"<leader>cC",
-		-- 	function()
-		-- 		local q = vim.fn.input("Copilot (#buffers): ")
-		-- 		if q ~= "" then
-		-- 			require("CopilotChat").ask("#buffers " .. q)
-		-- 		end
-		-- 	end,
-		-- 	desc = "CopilotChat: Ask about visible buffers",
-		-- 	mode = "n",
-		-- },
+		-- Add current file to Copilot context (promote to listed buffer)
+		{
+			"<leader>cf",
+			function()
+				local path = vim.api.nvim_buf_get_name(0)
+				if path == "" then
+					vim.notify("No file for this buffer", vim.log.levels.WARN)
+					return
+				end
+				local bufnr = vim.fn.bufadd(path)
+				vim.fn.bufload(bufnr)
+				vim.api.nvim_buf_set_option(bufnr, "buflisted", true)
 
-		-- Reset conversation (useful when switching topics)
+				local chat = require("CopilotChat")
+				chat.config.extra_files = chat.config.extra_files or {}
+				if not vim.tbl_contains(chat.config.extra_files, path) then
+					table.insert(chat.config.extra_files, path)
+					vim.notify("Added to Copilot buffers: " .. vim.fn.fnamemodify(path, ":t"))
+				else
+					vim.notify("Already in Copilot buffers: " .. vim.fn.fnamemodify(path, ":t"))
+				end
+			end,
+			desc = "CopilotChat: Add current file to buffers context",
+			mode = "n",
+		},
 		{
 			"<leader>cd",
 			function()
 				require("CopilotChat").reset()
 			end,
 			desc = "CopilotChat: Reset",
-			mode = "n",
 		},
 
-		-- Visual selection → ask
+		-- Ask about visual selection
 		{
 			"<leader>cq",
 			function()
@@ -67,11 +79,28 @@ return {
 			desc = "CopilotChat: Ask about selection",
 			mode = "v",
 		},
+
+		-- Toggle model (GPT-5 ↔ Claude Sonnet 4)
+		{
+			"<leader>cA",
+			function()
+				local chat = require("CopilotChat")
+				local cur = chat.config.model or "gpt-4.1"
+				local nextm = (cur == "gpt-4.1") and "gpt-5" or "gpt-4.1"
+				chat.config.model = nextm
+				vim.notify("CopilotChat model: " .. nextm, vim.log.levels.INFO)
+			end,
+			desc = "CopilotChat: Toggle model (GPT 5 ↔ GPT 4)",
+			mode = "n",
+		},
 	},
+
 	opts = {
 		show_help = false,
-		context = "buffer", -- default context
-		sticky_context = true, -- <== ensures chat continues with the same context
+		context = "buffer",
+		model = "gpt-4.1",
+		sticky_context = true,
+		extra_files = {}, -- absolute paths promoted to buffers
 		prompts = {
 			Explain = "#buffer Explain how it works.",
 			Review = "#buffer Review this code for improvements.",
@@ -85,7 +114,23 @@ return {
 			border = "rounded",
 		},
 	},
+
 	config = function(_, opts)
-		require("CopilotChat").setup(opts)
+		local chat = require("CopilotChat")
+		chat.setup(opts)
+
+		-- Inject context header automatically:
+		-- if extra_files exist → "#buffers", else "#buffer".
+		-- Skips if user already included #buffer/#buffers.
+		local raw_ask = chat.ask
+		chat.ask = function(user_prompt, call_opts)
+			user_prompt = user_prompt or ""
+			if user_prompt:find("#buffer", 1, true) or user_prompt:find("#buffers", 1, true) then
+				return raw_ask(user_prompt, call_opts)
+			end
+			local extras = chat.config.extra_files or {}
+			local header = (#extras > 0) and "> #buffers\n" or "> #buffer\n"
+			return raw_ask(header .. user_prompt, call_opts)
+		end
 	end,
 }
