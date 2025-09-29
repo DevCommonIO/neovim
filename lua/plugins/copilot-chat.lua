@@ -20,6 +20,28 @@ return {
 			desc = "CopilotChat: Ask (buffer/buffers)",
 			mode = "n",
 		},
+		{
+			"<leader>ch",
+			function()
+				local bufs = vim.fn.getbufinfo({ buflisted = 1 })
+				local names = {}
+				for _, buf in ipairs(bufs) do
+					table.insert(names, vim.fn.fnamemodify(buf.name, ":t"))
+				end
+				vim.notify("Listed buffers:\n" .. table.concat(names, "\n"), vim.log.levels.INFO)
+			end,
+			desc = "CopilotChat: Show all listed buffers",
+			mode = "n",
+		},
+
+		{
+			"<leader>co",
+			function()
+				require("CopilotChat").open()
+			end,
+			desc = "CopilotChat: Open chat buffer",
+			mode = "n",
+		},
 
 		-- Ask across all listed buffers
 		{
@@ -85,12 +107,12 @@ return {
 			"<leader>cA",
 			function()
 				local chat = require("CopilotChat")
-				local cur = chat.config.model or "gpt-4.1"
-				local nextm = (cur == "gpt-4.1") and "gpt-5" or "gpt-4.1"
+				local cur = chat.config.model or "gpt-4o"
+				local nextm = (cur == "gpt-4o") and "claude-sonnet-4" or "gpt-4o"
 				chat.config.model = nextm
 				vim.notify("CopilotChat model: " .. nextm, vim.log.levels.INFO)
 			end,
-			desc = "CopilotChat: Toggle model (GPT 5 ↔ GPT 4)",
+			desc = "CopilotChat: Toggle model (Sonnet  3.5 ↔ Sonnet 4)",
 			mode = "n",
 		},
 	},
@@ -98,7 +120,7 @@ return {
 	opts = {
 		show_help = false,
 		context = "buffer",
-		model = "gpt-4.1",
+		model = "gpt-4o", -- "claude-sonnet-3.5" | "claude-sonnet-4" | "gpt-4o" | "gpt-4o-mini"
 		sticky_context = true,
 		extra_files = {}, -- absolute paths promoted to buffers
 		prompts = {
