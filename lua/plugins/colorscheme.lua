@@ -1,20 +1,12 @@
--- colorscheme.lua
 return {
-	"loctvl842/monokai-pro.nvim",
-	priority = 1000,
-	config = function()
-		require("monokai-pro").setup({
-			transparent_background = false,
-			terminal_colors = true,
-			devicons = true,
-			filter = "spectrum", -- "pro" | "classic" | "machine" | "ristretto" | "spectrum" | "octagon"
-			styles = {
-				comments = { italic = true },
-				keywords = { italic = false },
-				functions = { bold = true },
-				variables = {},
-			},
-		})
-		vim.cmd.colorscheme("monokai-pro")
-	end,
+	{
+		"craftzdog/solarized-osaka.nvim",
+		lazy = true,
+		priority = 1000,
+		opts = function()
+			return {
+				transparent = true,
+			}
+		end,
+	},
 }
